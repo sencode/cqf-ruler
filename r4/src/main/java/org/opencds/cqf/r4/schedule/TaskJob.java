@@ -26,8 +26,6 @@ public class TaskJob extends BaseTaskJob{
 
         logger.info(jobExecutionContext.getJobDetail().getDescription());
         BaseTaskJob job = RulerScheduler.jobs.get(jobExecutionContext.getJobDetail().getDescription());
-        
-        RulerScheduler.taskProcessor.execute(job.getTask());
 
         //execute task
         if(job.getTask().getStatus().equals(Task.TaskStatus.COMPLETED)){
@@ -41,7 +39,7 @@ public class TaskJob extends BaseTaskJob{
 
 
         try{
-
+            RulerScheduler.taskProcessor.execute(job.getTask());
             //write implementation details here
 
         }catch(Exception jex){

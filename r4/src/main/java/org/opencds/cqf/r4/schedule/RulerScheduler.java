@@ -6,6 +6,7 @@ import org.hl7.fhir.instance.model.api.IAnyResource;
 import org.hl7.fhir.r4.model.Task;
 import org.hl7.fhir.r4.model.Timing;
 import org.opencds.cqf.common.exceptions.NotImplementedException;
+import org.opencds.cqf.r4.execution.ITaskProcessor;
 import org.opencds.cqf.r4.processors.TaskProcessor;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
@@ -42,10 +43,10 @@ public class RulerScheduler {
 
     private ScheduleExpression scheduleExpression;
 
-    public static TaskProcessor taskProcessor;
+    public static ITaskProcessor<Task> taskProcessor;
 
-    public RulerScheduler(FhirContext fhirContext, IGenericClient localClient, IGenericClient workFlowClient)throws SchedulerException {
-        taskProcessor = new TaskProcessor(fhirContext, localClient, workFlowClient);
+    public RulerScheduler(ITaskProcessor<Task> taskProcessorArg)throws SchedulerException {
+        taskProcessor = taskProcessorArg;
     }
 
     public void forTask(IAnyResource resource, String group)  throws SchedulerException {

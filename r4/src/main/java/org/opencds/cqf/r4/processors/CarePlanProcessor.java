@@ -14,6 +14,7 @@ import org.hl7.fhir.r4.model.Task.TaskStatus;
 import org.hl7.fhir.r4.model.CarePlan.CarePlanStatus;
 import org.opencds.cqf.common.helpers.ClientHelper;
 import org.opencds.cqf.r4.execution.ICarePlanProcessor;
+import org.opencds.cqf.r4.execution.ITaskProcessor;
 import org.opencds.cqf.r4.schedule.RulerScheduler;
 import org.opencds.cqf.r4.schedule.TaskJob;
 import org.hl7.fhir.exceptions.FHIRException;
@@ -124,7 +125,8 @@ public class CarePlanProcessor implements ICarePlanProcessor<CarePlan> {
             
 
             try {
-                RulerScheduler scheduler = new RulerScheduler(fhirContext, localClient, workFlowClient);
+                ITaskProcessor<Task> taskProcessor = new TaskProcessor(fhirContext, localClient, workFlowClient);
+                RulerScheduler scheduler = new RulerScheduler(taskProcessor);
                 scheduler.forTask(task, "test-" + task.getId());
                 scheduler.start();
             }catch (SchedulerException e){

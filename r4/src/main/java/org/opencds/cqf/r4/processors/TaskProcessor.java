@@ -38,9 +38,7 @@ public class TaskProcessor implements ITaskProcessor<Task> {
     public IAnyResource execute(Task task) {
         workFlowClient.read().resource(Task.class).withId(task.getIdElement()).execute();
         ERSDTaskManager ersdTaskManager = new ERSDTaskManager(fhirContext, localClient, workFlowClient);
-        GuidanceResponse guidanceResponse = new GuidanceResponse();
         String taskId = task.getIdElement().getIdPart();
-        guidanceResponse.setId("guidanceResponse-" + taskId);
         IAnyResource result = null;
         try {
             result = ersdTaskManager.forTask(task);
@@ -55,7 +53,7 @@ public class TaskProcessor implements ITaskProcessor<Task> {
     private void resolveStatusAndUpdate(Task task, IAnyResource executionResult) {
         //create extension countExecuted to determine completed
         //or use Timing count compared to event *Ask Bryn whether event is a record or directive*
-        task.setStatus(TaskStatus.COMPLETED);
+        //task.setStatus(TaskStatus.COMPLETED);
         TaskOutputComponent taskOutputComponent = new TaskOutputComponent();
         CodeableConcept typeCodeableConcept = new CodeableConcept();
         taskOutputComponent.setType(typeCodeableConcept);
