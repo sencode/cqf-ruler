@@ -1,13 +1,16 @@
 package org.opencds.cqf.r4.managers;
 
+import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.*;
 import org.hl7.fhir.r4.model.CarePlan.CarePlanActivityComponent;
 import org.hl7.fhir.r4.model.Goal.GoalLifecycleStatus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.hl7.fhir.r4.model.GuidanceResponse.GuidanceResponseStatus;
+import org.hl7.fhir.r4.model.Task.TaskStatus;
 import org.opencds.cqf.common.helpers.ClientHelper;
 
 import ca.uhn.fhir.jpa.dao.DaoRegistry;
@@ -17,39 +20,42 @@ import ca.uhn.fhir.context.FhirContext;
 
 public class ERSDTaskManager {
 
-    private DaoRegistry registry;
     private IGenericClient workFlowClient;
-    private IFhirResourceDao<Endpoint> endpointDao;
+    private IGenericClient localClient;
 
-    public ERSDTaskManager(FhirContext fhirContext, DaoRegistry registry, IGenericClient workFlowClient) {
-        this.registry = registry;
-        this.endpointDao = registry.getResourceDao(Endpoint.class);
+    public ERSDTaskManager(FhirContext fhirContext, IGenericClient localClient, IGenericClient workFlowClient) {
+        this.localClient = localClient;
         this.workFlowClient = workFlowClient;
     }
 
-    public Resource forTask(Task task, GuidanceResponse guidanceResponse) throws InstantiationException {
+    public Resource forTask(Task task) throws InstantiationException {
         Resource resource = null;
         // Cant use taskCode
         for (Coding coding : task.getCode().getCoding()) {
             switch (coding.getCode()) {
                 // these need to be codes
                 case ("rulefilter-report"):
-                    resource = fillGuidanceResponse(guidanceResponse, coding.getCode());
+                    resource = task;
                     break;
                 case ("create-eicr"):
-                    resource = executeCreateEICR(task, guidanceResponse);
+                    resource = executeCreateEICR(task);
+                    System.out.println(task.getId() + " executed");
                     break;
                 case ("periodic-update-eicr"):
-                    resource = updateEICR(guidanceResponse);
+                    resource = updateEICR(task);
+                    System.out.println(task.getId() + " executed");
                     break;
                 case ("close-out-eicr"):
-                    resource = closeOutEICR(guidanceResponse, coding.getCode());
+                    resource = closeOutEICR(task);
+                    System.out.println(task.getId() + " executed");
                     break;
                 case ("validate-eicr"):
-                    resource = validateEicr(guidanceResponse);
+                    resource = validateEicr(task);
+                    System.out.println(task.getId() + " executed");
                     break;
                 case ("route-and-send-eicr"):
-                    resource = routeAndSend(guidanceResponse);
+                    resource = routeAndSend(task);
+                    System.out.println(task.getId() + " executed");
                     break;
                 default:
                     throw new InstantiationException("Unknown task Apply type.");
@@ -60,25 +66,62 @@ public class ERSDTaskManager {
 
     // Demo get $notify -> PlanDef$apply -> executeCarePlan -> eventually posts eicr
     // to fhir endpoint
-    private Goal routeAndSend(GuidanceResponse guidanceResponse) {
-        // go to careplan look for create-eicr get outcome ref post to endpoint
-        Goal validate = new Goal();
-        System.out.println("eICR Routed and Sent.");
-        return validate;
+    private Bundle routeAndSend(Task task) {
+        CarePlan carePlan = null;
+        Bundle eicr = new Bundle();
+        for (Reference reference : task.getBasedOn()) {
+            if (reference.hasType() && reference.getType().equals("CarePlan")) {
+                List<Reference> outComeRefs = new ArrayList<Reference>();
+                carePlan = workFlowClient.read().resource(CarePlan.class).withId(reference.getReference()).execute();
+                carePlan.getActivity().stream()
+                    .filter(activity -> activity.getReference().getReference().equals("#" + "task-create-eicr"))
+                    .forEach(activity ->  outComeRefs.addAll(activity.getOutcomeReference()));
+                for (Reference ref : outComeRefs) {
+                    if (ref.getType().equals("Bundle")) {
+                        if (ref.getReference().toLowerCase().contains("eicr")) {
+                            eicr = localClient.read().resource(Bundle.class).withId(new IdType(ref.getReference())).execute();
+                            IBaseResource response = workFlowClient.update().resource(eicr).execute().getResource();
+                            System.out.println("eiCR Routed and Sent.");
+                            if (response.fhirType().equals("Bundle")) {
+                                eicr = (Bundle)response;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return eicr;
     }
 
-    private Goal validateEicr(GuidanceResponse guidanceResponse) {
-        Goal validate = new Goal();
-        // go back to careplan look up create eicr and look up outcome reference
-        System.out.println("Validated eICR");
-        return validate;
+    private Bundle validateEicr(Task task) {
+        CarePlan carePlan = null;
+        Bundle eicr = new Bundle();
+        for (Reference reference : task.getBasedOn()) {
+            if (reference.hasType() && reference.getType().equals("CarePlan")) {
+                List<Reference> outComeRefs = new ArrayList<Reference>();
+                carePlan = workFlowClient.read().resource(CarePlan.class).withId(reference.getReference()).execute();
+                carePlan.getActivity().stream()
+                    .filter(activity -> activity.getReference().getReference().equals("#" + "task-create-eicr"))
+                    .forEach(activity ->  outComeRefs.addAll(activity.getOutcomeReference()));
+                for (Reference ref : outComeRefs) {
+                    if (ref.getType().equals("Bundle")) {
+                        if (ref.getReference().toLowerCase().contains("eicr")) {
+                            eicr = localClient.read().resource(Bundle.class).withId(new IdType(ref.getReference())).execute();
+                            System.out.println("eicr Validated");
+                        }
+                    }
+                }
+            }
+        }
+        return eicr;
     }
 
-    private Bundle executeCreateEICR(Task task, GuidanceResponse guidanceResponse) {
+    private Bundle executeCreateEICR(Task task) {
         // find activity #create-eicr
         // set outcome reference on careplan
         Bundle bundle = new Bundle();
-        bundle = registry.getResourceDao(Bundle.class).read(new IdType("bundle-eicr-document-zika"));
+        bundle = localClient.read().resource(Bundle.class).withId(new IdType("bundle-eicr-document-zika")).execute();
+        System.out.println("eiCR Created.");
         Reference bundleReference = new Reference();
         bundleReference.setType("Bundle");
         bundleReference.setReference(bundle.getId());
@@ -91,40 +134,63 @@ public class ERSDTaskManager {
                     .forEach(activity ->  activity.addOutcomeReference(bundleReference));
             }
         }
+        task.setStatus(TaskStatus.COMPLETED);
+        workFlowClient.update().resource(carePlan).execute();
+        workFlowClient.update().resource(task).execute();
+        IBaseResource response = localClient.update().resource(bundle).execute().getResource();
+        if (response.fhirType().equals("Bundle")) {
+            bundle = (Bundle)response;
+        }
         return bundle;
     }
 
-    private Resource updateEICR(GuidanceResponse guidanceResponse) {
-        Goal eicr = new Goal();
-        eicr.setId("example-eicr");
-        eicr.setLifecycleStatus(GoalLifecycleStatus.ONHOLD);
-        Annotation retrieveEICR = new Annotation();
-        retrieveEICR.setText("Retrieve eICR using endpoint.");
-        eicr.addNote(retrieveEICR);
-        Annotation updatedEICRNote = new Annotation();
-        updatedEICRNote.setText("Update using eICR Service.");
-        eicr.addNote(updatedEICRNote);
+    private Bundle updateEICR(Task task) {
+        CarePlan carePlan = null;
+        Bundle eicr = new Bundle();
+        for (Reference reference : task.getBasedOn()) {
+            if (reference.hasType() && reference.getType().equals("CarePlan")) {
+                List<Reference> outComeRefs = new ArrayList<Reference>();
+                carePlan = workFlowClient.read().resource(CarePlan.class).withId(reference.getReference()).execute();
+                carePlan.getActivity().stream()
+                    .filter(activity -> activity.getReference().getReference().equals("#" + "task-create-eicr"))
+                    .forEach(activity ->  outComeRefs.addAll(activity.getOutcomeReference()));
+                for (Reference ref : outComeRefs) {
+                    if (ref.getType().equals("Bundle")) {
+                        if (ref.getReference().toLowerCase().contains("eicr")) {
+                            eicr = workFlowClient.read().resource(Bundle.class).withId(new IdType(ref.getReference())).execute();
+                            IBaseResource response = localClient.update().resource(eicr).execute().getResource();
+                            System.out.println("eiCR Updated.");
+                            if (response.fhirType().equals("Bundle")) {
+                                eicr = (Bundle)response;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return eicr;
     }
 
-    private Resource closeOutEICR(GuidanceResponse guidanceResponse, String taskCode) {
-        System.out.println("eICR closed out.");
-        return fillGuidanceResponse(guidanceResponse, taskCode, null);
-    }
-
-    private GuidanceResponse fillGuidanceResponse(GuidanceResponse guidanceResponse, String taskCode, Resource resource) {
-        if (resource != null) {
-            guidanceResponse.addContained(resource);
+    private Resource closeOutEICR(Task task) {
+        CarePlan carePlan = null;
+        Bundle eicr = new Bundle();
+        for (Reference reference : task.getBasedOn()) {
+            if (reference.hasType() && reference.getType().equals("CarePlan")) {
+                List<Reference> outComeRefs = new ArrayList<Reference>();
+                carePlan = workFlowClient.read().resource(CarePlan.class).withId(reference.getReference()).execute();
+                carePlan.getActivity().stream()
+                    .filter(activity -> activity.getReference().getReference().equals("#" + "task-create-eicr"))
+                    .forEach(activity ->  outComeRefs.addAll(activity.getOutcomeReference()));
+                for (Reference ref : outComeRefs) {
+                    if (ref.getType().equals("Bundle")) {
+                        if (ref.getReference().toLowerCase().contains("eicr")) {
+                            eicr = localClient.read().resource(Bundle.class).withId(new IdType(ref.getReference())).execute();
+                            System.out.println("eicr closed out.");
+                        }
+                    }
+                }
+            }
         }
-        return fillGuidanceResponse(guidanceResponse, taskCode);
+        return eicr;
     }
-
-    private GuidanceResponse fillGuidanceResponse(GuidanceResponse guidanceResponse, String taskCode) {
-        guidanceResponse.setStatus(GuidanceResponseStatus.SUCCESS);
-        Annotation resultNote = new Annotation();
-        resultNote.setText(taskCode + " applied.");
-        guidanceResponse.addNote(resultNote);
-        return guidanceResponse;
-    }
-
 }

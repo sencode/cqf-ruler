@@ -24,10 +24,16 @@ public class CarePlanProcessor implements ICarePlanProcessor<CarePlan> {
 
     private FhirContext fhirContext;
     private IFhirResourceDao<Endpoint> endpointDao;
+    private DaoRegistry registry;
+    private IGenericClient localClient;
+    private IGenericClient workFlowClient;
 
     public CarePlanProcessor(FhirContext fhirContext, DaoRegistry registry) {
         this.fhirContext = fhirContext;
         this.endpointDao = registry.getResourceDao(Endpoint.class);
+        this.registry = registry;
+        workFlowClient = ClientHelper.getClient(fhirContext, endpointDao.read(new IdType("local-endpoint")));
+        localClient = ClientHelper.getClient(fhirContext, endpointDao.read(new IdType("local-endpoint")));
     }
 
     /*
@@ -38,8 +44,6 @@ public class CarePlanProcessor implements ICarePlanProcessor<CarePlan> {
     //TODO: add dataEndpoint id parameter for grabbing an endpoint that already exists
     @Override
     public IAnyResource execute(CarePlan carePlan) {
-        Endpoint dataEndpoint = endpointDao.read(new IdType("local-endpoint"));
-        IGenericClient workFlowClient = ClientHelper.getClient(fhirContext, dataEndpoint);
         workFlowClient.update().resource(carePlan).execute();
         carePlan.setStatus(CarePlanStatus.ACTIVE);
         workFlowClient.update().resource(carePlan).execute();
@@ -53,7 +57,7 @@ public class CarePlanProcessor implements ICarePlanProcessor<CarePlan> {
         endpointDao.update(dataEndpoint);
         //Save CarePlan to DB
         
-        IGenericClient workFlowClient = ClientHelper.getClient(fhirContext, dataEndpoint);
+        workFlowClient = ClientHelper.getClient(fhirContext, dataEndpoint);
         workFlowClient.update().resource(carePlan).execute();
         carePlan.setStatus(CarePlanStatus.ACTIVE);
         workFlowClient.update().resource(carePlan).execute();
@@ -117,13 +121,11 @@ public class CarePlanProcessor implements ICarePlanProcessor<CarePlan> {
             //         }
             //     }
             // }
-
-            TaskJob job = new TaskJob(task);
-            job.setId("job-" + task.getId());
+            
 
             try {
-                RulerScheduler scheduler = new RulerScheduler(job, "TEST");
-
+                RulerScheduler scheduler = new RulerScheduler(fhirContext, localClient, workFlowClient);
+                scheduler.forTask(task, "test-" + task.getId());
                 scheduler.start();
             }catch (SchedulerException e){
 

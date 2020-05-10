@@ -62,4 +62,23 @@ public class DateHelper {
         }
         return calendar.getTime();
     }
+
+    public static Date increaseDate(String unit, BigDecimal value, Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
+        calendar.setTime(date);
+        calendar.getTime();
+        
+        switch (unit) {
+            //"s" is being used for testing
+            case ("s") : calendar.add(Calendar.SECOND, value.intValue()); break;
+            case ("h") : calendar.add(Calendar.HOUR_OF_DAY, value.intValue()); break;
+            case ("d") : calendar.add(Calendar.DAY_OF_MONTH, value.intValue()); break;
+            case ("w") : calendar.add(Calendar.WEEK_OF_MONTH, value.intValue()); break;
+            case ("m") : calendar.add(Calendar.MONTH, value.intValue()); break;
+            default :
+                throw new RuntimeException("Duration unit must be a DateTime unit. ");
+        }
+        return calendar.getTime();
+    }
 }

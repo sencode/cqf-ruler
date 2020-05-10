@@ -1,17 +1,27 @@
 package org.opencds.cqf.r4.schedule;
 
 import org.hl7.fhir.exceptions.FHIRException;
+import java.util.Calendar;
+import org.hl7.fhir.instance.model.api.IAnyResource;
+import org.hl7.fhir.r4.model.Task;
 import org.hl7.fhir.r4.model.Timing;
+import org.opencds.cqf.common.exceptions.NotImplementedException;
+import org.opencds.cqf.r4.processors.TaskProcessor;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.context.FhirVersionEnum;
+import ca.uhn.fhir.rest.client.api.IGenericClient;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.ibm.icu.text.SimpleDateFormat;
 
 public class RulerScheduler {
 
@@ -20,8 +30,7 @@ public class RulerScheduler {
     Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
 
     public static Set<String> taskNames = new HashSet<String>();
-    public static Map<String,BaseTaskJob> jobs = new HashMap<String, BaseTaskJob>();
-
+    public static Map<String, BaseTaskJob> jobs = new HashMap<String, BaseTaskJob>();
 
     private JobDetail jobDetail;
 
@@ -33,7 +42,20 @@ public class RulerScheduler {
 
     private ScheduleExpression scheduleExpression;
 
-    public RulerScheduler(BaseTaskJob job, String group) throws SchedulerException {
+    public static TaskProcessor taskProcessor;
+
+    public RulerScheduler(FhirContext fhirContext, IGenericClient localClient, IGenericClient workFlowClient)throws SchedulerException {
+        taskProcessor = new TaskProcessor(fhirContext, localClient, workFlowClient);
+    }
+
+    public void forTask(IAnyResource resource, String group)  throws SchedulerException {
+        org.hl7.fhir.r4.model.Task task = null;
+        switch (resource.getStructureFhirVersionEnum()) {
+            case R4 : task = (org.hl7.fhir.r4.model.Task)resource; break;
+            default : throw new NotImplementedException(resource.getStructureFhirVersionEnum().getFhirVersionString() + " not yet implemented.");
+        }
+        TaskJob job = new TaskJob(task);
+        job.setId("job-" + task.getId());
         this.taskJob = job;
         this.group = group;
         taskJob.setRulerScheduler(this);
@@ -45,7 +67,8 @@ public class RulerScheduler {
     private void initScheduleExpression(){
         if(taskJob.getTiming() == null){
             scheduleExpression = new ScheduleExpression(ScheduleType.ONCE);
-        } else{
+            scheduleExpression.setStartDateToNow();
+        } else if (taskJob.getTiming() != null) {
             logger.info("The task should repeat.");
             scheduleExpression = new ScheduleExpression(RulerScheduler.ScheduleType.SIMPLE);
             scheduleExpression.setStartDateToNow(); //Set to Encounter or related Task completion time
@@ -57,6 +80,15 @@ public class RulerScheduler {
                                             taskJob.getTiming().getRepeat().getPeriodUnit().toCode());
 
         }
+        if (taskJob.getRelativeStartDate() != null) {
+            logger.info("The task should execute after " + taskJob.getRelativeStartDate().toString());
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(taskJob.getRelativeStartDate());
+            SimpleDateFormat format1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String simpleDateString = format1.format(taskJob.getRelativeStartDate());
+            scheduleExpression.setStartDate(simpleDateString);
+        }
+        taskJob.setStartDate(scheduleExpression.getStartDate());
     }
 
     private void initiateTask() throws FHIRException {
@@ -107,7 +139,7 @@ public class RulerScheduler {
         if(scheduleExpression.getScheduleType().equals(ScheduleType.ONCE)){
             trigger = (SimpleTrigger) TriggerBuilder.newTrigger()
                         .withIdentity("onceTrigger", group)
-                        .startNow()                                //.startAt(scheduleExpression.getStartDate())
+                        .startAt(scheduleExpression.getStartDate())                          //
                         .forJob(taskJob.getId(), group)
                         .build();
 
@@ -116,7 +148,7 @@ public class RulerScheduler {
             logger.info("Interval:"+scheduleExpression.getInterValInSeconds());
             trigger = TriggerBuilder.newTrigger()
                     .withIdentity("simpleTrigger", group)
-                    .startNow()
+                    .startAt(scheduleExpression.getStartDate())
                     .withSchedule(SimpleScheduleBuilder.simpleSchedule()
                             .withIntervalInSeconds(scheduleExpression.getInterValInSeconds())
                             .repeatForever())
@@ -144,7 +176,7 @@ public class RulerScheduler {
         try {
             scheduler.shutdown(false);
             taskNames.remove(taskJob.getId());
-            jobs.remove(taskJob.getId());
+            //jobs.remove(taskJob.getId());
         } catch (SchedulerException e) {
             logger.info("Job has been shutdown:"+ taskJob.getId()+"|"+group+"|"+e.toString());
         }

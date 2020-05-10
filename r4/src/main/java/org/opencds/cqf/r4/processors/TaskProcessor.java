@@ -20,27 +20,30 @@ import org.opencds.cqf.r4.managers.ERSDTaskManager;
 
 public class TaskProcessor implements ITaskProcessor<Task> {
 
-    private IGenericClient workFlowClient;
-    private IFhirResourceDao<Endpoint> endpointDao;
     private FhirContext fhirContext;
-    private DaoRegistry registry;
+    private IGenericClient workFlowClient;
+    private IGenericClient localClient;
 
-    public TaskProcessor(FhirContext fhirContext, DaoRegistry registry) {
+    public TaskProcessor(FhirContext fhirContext, IGenericClient localClient, IGenericClient workFlowClient) {
         this.fhirContext = fhirContext;
-        this.registry = registry;
-        this.endpointDao = registry.getResourceDao(Endpoint.class);
-        workFlowClient = ClientHelper.getClient(fhirContext, endpointDao.read(new IdType("local-endpoint")));
+        this.workFlowClient = workFlowClient;
+        this.localClient = localClient;
+    }
+
+    public IAnyResource execute(Task task, Endpoint endpoint) {
+        workFlowClient = ClientHelper.getClient(fhirContext, endpoint);
+        return execute(task);
     }
 
     public IAnyResource execute(Task task) {
         workFlowClient.read().resource(Task.class).withId(task.getIdElement()).execute();
-        ERSDTaskManager ersdTaskManager = new ERSDTaskManager(fhirContext, registry, workFlowClient);
+        ERSDTaskManager ersdTaskManager = new ERSDTaskManager(fhirContext, localClient, workFlowClient);
         GuidanceResponse guidanceResponse = new GuidanceResponse();
         String taskId = task.getIdElement().getIdPart();
         guidanceResponse.setId("guidanceResponse-" + taskId);
         IAnyResource result = null;
         try {
-            result = ersdTaskManager.forTask(task, guidanceResponse);
+            result = ersdTaskManager.forTask(task);
         } catch (InstantiationException e) {
             System.out.println("unable to execute Task: " + taskId);
             e.printStackTrace();
@@ -52,6 +55,7 @@ public class TaskProcessor implements ITaskProcessor<Task> {
     private void resolveStatusAndUpdate(Task task, IAnyResource executionResult) {
         //create extension countExecuted to determine completed
         //or use Timing count compared to event *Ask Bryn whether event is a record or directive*
+        task.setStatus(TaskStatus.COMPLETED);
         TaskOutputComponent taskOutputComponent = new TaskOutputComponent();
         CodeableConcept typeCodeableConcept = new CodeableConcept();
         taskOutputComponent.setType(typeCodeableConcept);

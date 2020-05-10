@@ -17,24 +17,24 @@ public class Main {
 
 
 
-        Extension ext = new Extension();
-        ext.setUrl("http://example.com/extensions#someext");
-        ext.setValue(timing);
+        // Extension ext = new Extension();
+        // ext.setUrl("http://example.com/extensions#someext");
+        // ext.setValue(timing);
 
 
-        task.addExtension(ext);
+        // task.addExtension(ext);
 
-        TaskJob job = new TaskJob(task);
-        job.setId("testID101");
+        // TaskJob job = new TaskJob(task);
+        // job.setId("testID101");
 
 
-        try {
-            RulerScheduler scheduler = new RulerScheduler(job, "TEST");
+        // try {
+        //     RulerScheduler scheduler = new RulerScheduler(job, "TEST");
 
-            scheduler.start();
-        }catch (SchedulerException e){
+        //     scheduler.start();
+        // }catch (SchedulerException e){
 
-            e.printStackTrace();
-        }
+        //     e.printStackTrace();
+        // }
     }
 }

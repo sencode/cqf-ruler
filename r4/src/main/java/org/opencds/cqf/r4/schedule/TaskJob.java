@@ -1,6 +1,8 @@
 package org.opencds.cqf.r4.schedule;
 
 import org.hl7.fhir.r4.model.Task;
+import org.opencds.cqf.r4.processors.TaskProcessor;
+import org.opencds.cqf.r4.providers.TaskProvider;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
@@ -24,6 +26,8 @@ public class TaskJob extends BaseTaskJob{
 
         logger.info(jobExecutionContext.getJobDetail().getDescription());
         BaseTaskJob job = RulerScheduler.jobs.get(jobExecutionContext.getJobDetail().getDescription());
+        
+        RulerScheduler.taskProcessor.execute(job.getTask());
 
         //execute task
         if(job.getTask().getStatus().equals(Task.TaskStatus.COMPLETED)){

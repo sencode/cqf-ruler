@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.xml.bind.JAXBException;
@@ -174,8 +175,8 @@ public class PlanDefinitionApplyProcessor {
                     }
 
                     applyAction(session, result, action);
-                    session.getCarePlanBuilder().buildContained(result).buildActivity(
-                            new CarePlanActivityBuilder().buildReference(new Reference("#" + result.getId()).setType(result.fhirType())).build());
+                    session.getCarePlanBuilder().buildContained(result).buildActivity(new CarePlanActivityBuilder()
+                            .buildReference(new Reference("#" + result.getId()).setType(result.fhirType())).build());
                 } catch (Exception e) {
                     PlanDefinitionApplyProvider.logger.error(
                             "ERROR: ActivityDefinition %s could not be applied and threw exception %s",
@@ -205,6 +206,7 @@ public class PlanDefinitionApplyProcessor {
                     for (Coding actionCoding : actionCode.getCoding()) {
                         if (actionCoding.getSystem().equals("http://aphl.org/fhir/ecr/CodeSystem/executable-task-types")) {
                             foundExecutableTaskCode = true;
+                            task.setId(new IdType("task-" + actionCoding.getCode()));
                         }
                     }
                     if (foundExecutableTaskCode) {
@@ -221,7 +223,35 @@ public class PlanDefinitionApplyProcessor {
                     offsetExtension.setUrl("http://hl7.org/fhir/aphl/StructureDefinition/offset");
                     offsetExtension.setValue(relatedAction.getOffset());
                     task.addExtension(offsetExtension);
-                    
+                    Reference reference = new Reference();
+                    Optional<PlanDefinitionActionComponent> optionalRelatedAction = session.getPlanDefinition().getAction().stream().filter(planDefAction -> planDefAction.getId().equals(relatedAction.getActionId())).findFirst();
+                    if (optionalRelatedAction.isPresent()) {
+                        PlanDefinition.PlanDefinitionActionComponent relatedActionComponent = optionalRelatedAction.get();
+                        String executableUrl = "http://aphl.org/fhir/ecr/CodeSystem/executable-task-types";
+                        if(relatedActionComponent.hasCode()) {
+                            for (CodeableConcept relatedActionCode : relatedActionComponent.getCode()) {
+                                for (Coding relatedActionCoding : relatedActionCode.getCoding()) {
+                                    if(task.hasCode()) {
+                                        for (Coding taskCoding : task.getCode().getCoding()) {
+                                        //only if both actions are executable
+                                        if (relatedActionCoding.getSystem().equals(executableUrl) && taskCoding.getSystem().equals(executableUrl)) {
+                                            Extension relativePeriodExtension = new Extension();
+                                            relativePeriodExtension.setUrl("http://hl7.org/fhir/extension-cqf-relativedatetime.html");
+                                            reference.setReference("task-" + relatedActionCoding.getCode());
+                                            reference.setType("Task");
+                                            relativePeriodExtension.setValue(reference);
+                                            task.getExecutionPeriod().addExtension(relativePeriodExtension);
+                                            break;
+                                        } else if (taskCoding.getSystem().equals(executableUrl)) {
+                                            //offset needs to be applied to Encounter start
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                        
+                    }
                 }
             }
         }
@@ -242,7 +272,7 @@ public class PlanDefinitionApplyProcessor {
                 }
             }
         }
-        task.addBasedOn(new Reference(session.getCarePlan()).setType(session.getCarePlan().fhirType()));
+        task.addBasedOn(new Reference(session.getCarePlan()).setType(session.getCarePlan().fhirType()).setReference(session.getCarePlan().getId()));
         return task;
     }
 
