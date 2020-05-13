@@ -1,8 +1,6 @@
 package org.opencds.cqf.r4.processors;
 
 import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.jpa.dao.DaoRegistry;
-import ca.uhn.fhir.jpa.dao.IFhirResourceDao;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 
 import org.hl7.fhir.r4.model.Task.TaskOutputComponent;
@@ -14,7 +12,6 @@ import java.util.List;
 
 import org.hl7.fhir.r4.model.Task.TaskStatus;
 import org.hl7.fhir.r4.model.CarePlan.CarePlanStatus;
-import org.opencds.cqf.common.helpers.ClientHelper;
 import org.opencds.cqf.r4.execution.ITaskProcessor;
 import org.opencds.cqf.r4.managers.ERSDTaskManager;
 
@@ -28,11 +25,6 @@ public class TaskProcessor implements ITaskProcessor<Task> {
         this.fhirContext = fhirContext;
         this.workFlowClient = workFlowClient;
         this.localClient = localClient;
-    }
-
-    public IAnyResource execute(Task task, Endpoint endpoint) {
-        workFlowClient = ClientHelper.getClient(fhirContext, endpoint);
-        return execute(task);
     }
 
     public IAnyResource execute(Task task) {
@@ -93,8 +85,9 @@ public class TaskProcessor implements ITaskProcessor<Task> {
             }
             if(allTasksCompleted) {
                 carePlan.setStatus(CarePlanStatus.COMPLETED);
-                workFlowClient.update().resource(carePlan).execute();
+                localClient.update().resource(carePlan).execute();
             }
+            localClient.update().resource(carePlan).execute();
         }
         workFlowClient.update().resource(task).execute();
     }

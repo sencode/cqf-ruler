@@ -58,10 +58,10 @@ public class ReportingManager {
         planDefinitionApplyProcessor = new PlanDefinitionApplyProcessor(fhirContext, activityDefinitionApplyProcessor, registry, cqlExecutionProcessor);
     }
 
-    public IAnyResource manage(String eRSDId, String patientId) throws FHIRException, IOException, JAXBException {
+    public IAnyResource manage(String eRSDId, String patientId, Endpoint endpoint) throws FHIRException, IOException, JAXBException {
         CarePlan carePlan = applyPlanDefinition(eRSDId, patientId);
         if (carePlan == null || !carePlan.hasStatus() || !carePlan.hasContained() || !carePlan.hasCreated()) {
-            return executeCarePlan(carePlan);
+            return executeCarePlan(carePlan, endpoint);
         }
         else {
             Task notReportableTask = new Task();
@@ -76,9 +76,14 @@ public class ReportingManager {
         return planDefinitionApplyProcessor.applyPlanDefinition(new IdType(eRSDId), patientId, null, null, null, null, null, null, null, null, eRSDEndpoint);
     }
 
-    private IAnyResource executeCarePlan(CarePlan carePlan) {
+    private IAnyResource executeCarePlan(CarePlan carePlan, Endpoint endpoint) {
         CarePlanProcessor carePlanProcessor = new CarePlanProcessor(fhirContext, registry);
-        return carePlanProcessor.execute(carePlan);
+        if (endpoint == null) {
+            return carePlanProcessor.execute(carePlan);
+        }
+        else {
+            return carePlanProcessor.execute(carePlan, endpoint);
+        }
     }
 
     //TaskScheduler

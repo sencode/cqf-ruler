@@ -2,6 +2,7 @@ package org.opencds.cqf.r4.managers;
 
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.*;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.CarePlan.CarePlanActivityComponent;
 import org.hl7.fhir.r4.model.Goal.GoalLifecycleStatus;
 
@@ -158,6 +159,8 @@ public class ERSDTaskManager {
                     if (ref.getType().equals("Bundle")) {
                         if (ref.getReference().toLowerCase().contains("eicr")) {
                             eicr = workFlowClient.read().resource(Bundle.class).withId(new IdType(ref.getReference())).execute();
+                            //TODO: take this out it is for demo purposes only...
+                            eicr.addEntry(new BundleEntryComponent());
                             IBaseResource response = localClient.update().resource(eicr).execute().getResource();
                             System.out.println("eiCR Updated.");
                             if (response.fhirType().equals("Bundle")) {

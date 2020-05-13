@@ -52,21 +52,12 @@ public class CarePlanProcessor implements ICarePlanProcessor<CarePlan> {
         List<Resource> containedResources = carePlan.getContained();
         containedResources.forEach(resource -> forContained(carePlan, resource, workFlowClient));
         System.out.println("CarePlan executed. ");
+        workFlowClient.update().resource(carePlan).execute().getResource();
         return carePlan;
     }
     public IAnyResource execute(CarePlan carePlan, Endpoint dataEndpoint) {
-        endpointDao.update(dataEndpoint);
-        //Save CarePlan to DB
-        
         workFlowClient = ClientHelper.getClient(fhirContext, dataEndpoint);
-        workFlowClient.update().resource(carePlan).execute();
-        carePlan.setStatus(CarePlanStatus.ACTIVE);
-        workFlowClient.update().resource(carePlan).execute();
-
-        List<Resource> containedResources = carePlan.getContained();
-        containedResources.forEach(resource -> forContained(carePlan, resource, workFlowClient));
-        System.out.println("CarePlan executed. ");
-        return carePlan;
+        return execute(carePlan);
     }
 
     private void forContained(CarePlan carePlan, Resource resource, IGenericClient workFlowClient) {
@@ -97,7 +88,9 @@ public class CarePlanProcessor implements ICarePlanProcessor<CarePlan> {
         }
         if (isExecutable) {
             // if (task.getCode().)
-            task.setStatus(TaskStatus.INPROGRESS);
+            if (!task.getStatus().equals(TaskStatus.COMPLETED)) {
+                task.setStatus(TaskStatus.INPROGRESS);
+            }
             workFlowClient.update().resource(task).execute();
             // if (task.hasExtension()) {
             //     Extension taskTimingExtension = task.getExtensionByUrl("http://hl7.org/fhir/aphl/StructureDefinition/timing");

@@ -8,6 +8,7 @@ import org.opencds.cqf.cql.service.factory.DataProviderFactory;
 
 import org.hl7.fhir.exceptions.FHIRException;
 import org.hl7.fhir.instance.model.api.IAnyResource;
+import org.hl7.fhir.r4.model.Endpoint;
 import org.hl7.fhir.r4.model.Resource;
 import org.opencds.cqf.common.providers.LibraryResolutionProvider;
 import org.opencds.cqf.cql.engine.terminology.TerminologyProvider;
@@ -41,10 +42,11 @@ public class NotifyProvider {
     @Operation(name = "$notify", idempotent = true)
     public IAnyResource notify(
             @OperationParam(name ="patientId") String patientId,
-            @OperationParam(name="encounterId") String encounterId) throws FHIRException, IOException, JAXBException {
+            @OperationParam(name="encounterId") String encounterId,
+            @OperationParam(name="workFlowEndpoint") Endpoint workFlowEndpoint) throws FHIRException, IOException, JAXBException {
                 // How do I know which PlanDefinition to apply
                 String eRSDId = "plandefinition-RuleFilters-1.0.0";
         ReportingManager reportingManager = new ReportingManager(fhirContext, registry, libraryResourceProvider, dataProviderFactory, localSystemTerminologyProvider);
-        return reportingManager.manage(eRSDId, patientId);
+        return reportingManager.manage(eRSDId, patientId, workFlowEndpoint);
     }
 }
