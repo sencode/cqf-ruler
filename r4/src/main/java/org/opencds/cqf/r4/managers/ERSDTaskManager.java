@@ -3,20 +3,13 @@ package org.opencds.cqf.r4.managers;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.*;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
-import org.hl7.fhir.r4.model.CarePlan.CarePlanActivityComponent;
-import org.hl7.fhir.r4.model.Goal.GoalLifecycleStatus;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import org.hl7.fhir.r4.model.GuidanceResponse.GuidanceResponseStatus;
+import org.hl7.fhir.r4.model.Task.TaskOutputComponent;
 import org.hl7.fhir.r4.model.Task.TaskStatus;
-import org.opencds.cqf.common.helpers.ClientHelper;
-
-import ca.uhn.fhir.jpa.dao.DaoRegistry;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
-import ca.uhn.fhir.jpa.dao.IFhirResourceDao;
 import ca.uhn.fhir.context.FhirContext;
 
 public class ERSDTaskManager {
@@ -107,7 +100,8 @@ public class ERSDTaskManager {
                 for (Reference ref : outComeRefs) {
                     if (ref.getType().equals("Bundle")) {
                         if (ref.getReference().toLowerCase().contains("eicr")) {
-                            eicr = localClient.read().resource(Bundle.class).withId(new IdType(ref.getReference())).execute();
+                            eicr = workFlowClient.read().resource(Bundle.class).withId(new IdType(ref.getReference())).execute();
+                            workFlowClient.update().resource(eicr).execute().getResource();
                             System.out.println("eicr Validated");
                         }
                     }
@@ -123,9 +117,17 @@ public class ERSDTaskManager {
         Bundle bundle = new Bundle();
         bundle = localClient.read().resource(Bundle.class).withId(new IdType("bundle-eicr-document-zika")).execute();
         System.out.println("eiCR Created.");
+        TaskOutputComponent taskOutputComponent = new TaskOutputComponent();
+        CodeableConcept typeCodeableConcept = new CodeableConcept();
+        taskOutputComponent.setType(typeCodeableConcept);
+        Reference resultReference = new Reference();
+        resultReference.setType(bundle.fhirType());
+        resultReference.setReference(bundle.getId());
+        taskOutputComponent.setValue(resultReference);
+        task.addOutput(taskOutputComponent);
         Reference bundleReference = new Reference();
         bundleReference.setType("Bundle");
-        bundleReference.setReference(bundle.getId());
+        bundleReference.setReference("Bundle/" + bundle.getIdElement().getIdPart());
         CarePlan carePlan = null;
         for (Reference reference : task.getBasedOn()) {
             if (reference.hasType() && reference.getType().equals("CarePlan")) {
@@ -135,13 +137,11 @@ public class ERSDTaskManager {
                     .forEach(activity ->  activity.addOutcomeReference(bundleReference));
             }
         }
-        task.setStatus(TaskStatus.COMPLETED);
+        //hack for now get latest
+        CarePlan oldCarePlan = workFlowClient.read().resource(CarePlan.class).withId(carePlan.getIdElement().getIdPart()).execute();
+        carePlan.setId(oldCarePlan.getIdElement());
         workFlowClient.update().resource(carePlan).execute();
-        workFlowClient.update().resource(task).execute();
-        IBaseResource response = localClient.update().resource(bundle).execute().getResource();
-        if (response.fhirType().equals("Bundle")) {
-            bundle = (Bundle)response;
-        }
+        workFlowClient.update().resource(bundle).execute();
         return bundle;
     }
 
@@ -161,7 +161,7 @@ public class ERSDTaskManager {
                             eicr = workFlowClient.read().resource(Bundle.class).withId(new IdType(ref.getReference())).execute();
                             //TODO: take this out it is for demo purposes only...
                             eicr.addEntry(new BundleEntryComponent());
-                            IBaseResource response = localClient.update().resource(eicr).execute().getResource();
+                            IBaseResource response = workFlowClient.update().resource(eicr).execute().getResource();
                             System.out.println("eiCR Updated.");
                             if (response.fhirType().equals("Bundle")) {
                                 eicr = (Bundle)response;
@@ -187,7 +187,8 @@ public class ERSDTaskManager {
                 for (Reference ref : outComeRefs) {
                     if (ref.getType().equals("Bundle")) {
                         if (ref.getReference().toLowerCase().contains("eicr")) {
-                            eicr = localClient.read().resource(Bundle.class).withId(new IdType(ref.getReference())).execute();
+                            eicr = workFlowClient.read().resource(Bundle.class).withId(new IdType(ref.getReference())).execute();
+                            workFlowClient.update().resource(eicr).execute().getResource();
                             System.out.println("eicr closed out.");
                         }
                     }

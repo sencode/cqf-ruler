@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.hl7.fhir.r4.model.Task.TaskStatus;
+import org.hl7.fhir.r4.model.CarePlan.CarePlanActivityComponent;
 import org.hl7.fhir.r4.model.CarePlan.CarePlanStatus;
 import org.opencds.cqf.r4.execution.ITaskProcessor;
 import org.opencds.cqf.r4.managers.ERSDTaskManager;
@@ -43,53 +44,65 @@ public class TaskProcessor implements ITaskProcessor<Task> {
     }
 
     private void resolveStatusAndUpdate(Task task, IAnyResource executionResult) {
-        //create extension countExecuted to determine completed
-        //or use Timing count compared to event *Ask Bryn whether event is a record or directive*
-        //task.setStatus(TaskStatus.COMPLETED);
-        TaskOutputComponent taskOutputComponent = new TaskOutputComponent();
-        CodeableConcept typeCodeableConcept = new CodeableConcept();
-        taskOutputComponent.setType(typeCodeableConcept);
-        Reference resultReference = new Reference();
-        resultReference.setType(executionResult.fhirType());
-        resultReference.setReference(executionResult.getId());
-        taskOutputComponent.setValue(resultReference);
-        task.addOutput(taskOutputComponent);
         workFlowClient.update().resource(task).execute();
+        updateCarePlanTasks(task);
+        workFlowClient.update().resource(task).execute();
+    }
+
+    private void updateCarePlanTasks(Task task) {
         List<Reference> basedOnReferences = task.getBasedOn();
         if (basedOnReferences.isEmpty() || basedOnReferences == null) {
             throw new RuntimeException("Task must fullfill a request in order to be applied. i.e. must have a basedOn element containing a reference to a Resource");
         }
-        List<CarePlan> carePlansAssociatedWithTask = new LinkedList<CarePlan>();
-        basedOnReferences.stream()
-            .filter(reference -> reference.getReference().contains("CarePlan/"))
-            .map(reference -> workFlowClient.read().resource(CarePlan.class).withId(reference.getReference()).execute())
-            .forEach(carePlan -> carePlansAssociatedWithTask.add((CarePlan)carePlan));
-        
         if (basedOnReferences.isEmpty()) {
             throw new RuntimeException("$taskApply only supports tasks based on CarePlans as of now.");  
         }
-
-        for (CarePlan carePlan : carePlansAssociatedWithTask) {
-            List<Task> carePlanTasks = new LinkedList<Task>();
+        CarePlan carePlan = null;
+        for (Reference reference : task.getBasedOn()) {
+            if (reference.hasType() && reference.getType().equals("CarePlan")) {
+                carePlan = workFlowClient.read().resource(CarePlan.class).withId(reference.getReference()).execute();
+                List<Resource> carePlanTasks = new LinkedList<Resource>();
             carePlan.getContained().stream()
                 .filter(resource -> (resource instanceof Task))
                 .map(resource -> (Task)resource)
-                .forEach(containedTask -> carePlanTasks.add(containedTask));
-            boolean allTasksCompleted = true;
-            for (Task containedTask : carePlanTasks) {
-                containedTask.setId(containedTask.getIdElement().getIdPart().replaceAll("#", ""));
-                containedTask = workFlowClient.read().resource(Task.class).withId(containedTask.getId()).execute();
-                if(containedTask.getStatus() != TaskStatus.COMPLETED) {
-                    allTasksCompleted = false;
+                .forEach(containedTask -> {
+                    String containedTaskId = containedTask.getIdElement().getIdPart().replaceAll("#", "");
+                    containedTask.setId(containedTaskId);
+                    containedTask = workFlowClient.read().resource(Task.class).withId(containedTask.getId()).execute();
+                    carePlanTasks.add(containedTask.setId(containedTaskId));
+                });
+                boolean allTasksCompleted = true;
+                for (Resource containedTask : carePlanTasks) {
+                    Task containedTaskResource = (Task)containedTask;
+                    if(containedTaskResource.getStatus() != TaskStatus.COMPLETED) {
+                        allTasksCompleted = false;
+                    }
+                    //This is necessary as of now because the Task Resource is tacked on behind the scenes when referencing a contained Resource.
+                    if (carePlan.hasActivity()) {
+                        for (CarePlanActivityComponent activity : carePlan.getActivity()) {
+                            if (activity.getReference().getReference().equals("#" + containedTask.getIdElement().getIdPart())) {
+                                activity.setReference(new Reference("#" + containedTask.getId()).setType(containedTask.fhirType()));
+                            }
+                        }
+                    }
                 }
-            }
+                
             if(allTasksCompleted) {
                 carePlan.setStatus(CarePlanStatus.COMPLETED);
-                localClient.update().resource(carePlan).execute();
             }
-            localClient.update().resource(carePlan).execute();
+            carePlan.setContained(carePlanTasks);
+            //hack for now get latest
+            CarePlan oldCarePlan = workFlowClient.read().resource(CarePlan.class).withId(carePlan.getIdElement().getIdPart()).execute();
+            carePlan.setId(oldCarePlan.getIdElement());
+            workFlowClient.update().resource(carePlan).execute();
+            }
+        }            
         }
+
+    @Override
+    public void update(Task task) {
         workFlowClient.update().resource(task).execute();
+        updateCarePlanTasks(task);
     }
 
 }

@@ -12,6 +12,8 @@ public class TaskJob extends BaseTaskJob{
 
     private static final Logger logger = LoggerFactory.getLogger(TaskJob.class);
 
+    private int taskExecutedCount = 0;
+
     public TaskJob(Task task) {
         super(task);
     }
@@ -33,21 +35,37 @@ public class TaskJob extends BaseTaskJob{
             return;
         }
 
-//        logger.info(RulerScheduler.jobs.get(jobExecutionContext.getJobDetail().getDescription()).getTask().getStatus().toCode());
-//        job.setStatus(Task.TaskStatus.COMPLETED);
-
-
 
         try{
             RulerScheduler.taskProcessor.execute(job.getTask());
+            taskExecutedCount++;
+            System.out.println("Execution count: " + taskExecutedCount);
+            if (job.getTiming() == null) {
+                job.setStatus(Task.TaskStatus.COMPLETED);
+                job.getTask().setStatus(Task.TaskStatus.COMPLETED);
+            }else {
+                System.out.println("Repeat count: " + job.getTiming().getRepeat().getCount());
+            }
+            if (job.getTiming() != null && taskExecutedCount == job.getTiming().getRepeat().getCount()) {
+                System.out.println("Repeat count: " + job.getTiming().getRepeat().getCount());
+                logger.info(RulerScheduler.jobs.get(jobExecutionContext.getJobDetail().getDescription()).getTask().getStatus().toCode());
+                job.setStatus(Task.TaskStatus.COMPLETED);
+            }
+
+            RulerScheduler.taskProcessor.update(job.getTask());
+
             //write implementation details here
 
         }catch(Exception jex){
             executionFailed = true;
-           // getTask().setStatus(Task.TaskStatus.FAILED);
+            job.getTask().setStatus(Task.TaskStatus.FAILED);
             if(jex instanceof JobExecutionException){
                 throw jex;
             }
+            else {
+                logger.error(jex.getMessage());
+            }
+            RulerScheduler.taskProcessor.update(job.getTask());
         }
 
         if(!executionFailed){
