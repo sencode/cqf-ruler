@@ -105,4 +105,14 @@ public class TaskProcessor implements ITaskProcessor<Task> {
         updateCarePlanTasks(task);
     }
 
+    public static void updateStatus(Task task, TaskStatus status) {
+        if (task.getStatus().equals(TaskStatus.DRAFT)) {
+            task.setStatus(status);
+        } else if (task.getStatus().equals(TaskStatus.INPROGRESS) && !status.equals(TaskStatus.DRAFT)) {
+            task.setStatus(status);
+        } else if (!task.getStatus().equals(TaskStatus.COMPLETED)) {
+            task.setStatus(status);
+        }
+    }
+
 }

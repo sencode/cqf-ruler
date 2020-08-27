@@ -88,9 +88,7 @@ public class CarePlanProcessor implements ICarePlanProcessor<CarePlan> {
         }
         if (isExecutable) {
             // if (task.getCode().)
-            if (!task.getStatus().equals(TaskStatus.COMPLETED)) {
-                task.setStatus(TaskStatus.INPROGRESS);
-            }
+            TaskProcessor.updateStatus(task, TaskStatus.INPROGRESS);
             workFlowClient.update().resource(task).execute();
             // if (task.hasExtension()) {
             //     Extension taskTimingExtension = task.getExtensionByUrl("http://hl7.org/fhir/aphl/StructureDefinition/timing");

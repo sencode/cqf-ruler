@@ -13,6 +13,7 @@ import org.hl7.fhir.r4.model.Task.TaskIntent;
 import org.hl7.fhir.r4.model.Task.TaskPriority;
 import org.hl7.fhir.r4.model.Task.TaskStatus;
 import org.opencds.cqf.common.helpers.DateHelper;
+import org.opencds.cqf.r4.processors.TaskProcessor;
 import org.hl7.fhir.r4.model.Timing;
 import java.util.Date;
 import org.hl7.fhir.r4.model.Type;
@@ -138,12 +139,12 @@ public abstract class BaseTaskJob implements HapiJob {
     //https://www.hl7.org/fhir/valueset-task-status.html
     public void setStatus(String statusString) {
 
-        this.task.setStatus(TaskStatus.fromCode(statusString));
+        TaskProcessor.updateStatus(this.task, TaskStatus.fromCode(statusString));
     }
 
     public void setStatus(TaskStatus status) {
 
-        this.task.setStatus(status);
+        TaskProcessor.updateStatus(this.task, status);
     }
 
 
