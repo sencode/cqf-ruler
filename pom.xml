@@ -191,12 +191,28 @@
                 <artifactId>cql-to-elm</artifactId>
                 <version>${cqframework.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>info.cqframework</groupId>
+                <artifactId>cql</artifactId>
+                <version>${cqframework.version}</version>
+            </dependency>
             <dependency>
                 <groupId>info.cqframework</groupId>
                 <artifactId>cql-formatter</artifactId>
                 <version>${cqframework.version}</version>
             </dependency>
+            <dependency>
+                <groupId>info.cqframework</groupId>
+                <artifactId>qdm</artifactId>
+                <version>${cqframework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>info.cqframework</groupId>
+                <artifactId>quick</artifactId>
+                <version>${cqframework.version}</version>
+            </dependency>
+
+            <!-- cds hooks -->
             <dependency>
                 <groupId>org.opencds.cqf</groupId>
                 <artifactId>cds</artifactId>
