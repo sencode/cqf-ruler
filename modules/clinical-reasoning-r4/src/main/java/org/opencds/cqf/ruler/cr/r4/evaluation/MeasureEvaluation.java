@@ -1,4 +1,4 @@
-package org.opencds.cqf.r4.evaluation;
+package org.opencds.cqf.ruler.cr.r4.evaluation;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -22,14 +22,14 @@ import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.StringType;
-import org.opencds.cqf.common.evaluation.MeasurePopulationType;
-import org.opencds.cqf.common.evaluation.MeasureScoring;
+import org.opencds.cqf.ruler.cr.constant.MeasurePopulationType;
+import org.opencds.cqf.ruler.cr.constant.MeasureScoring;
 import org.opencds.cqf.cql.engine.data.DataProvider;
 import org.opencds.cqf.cql.engine.execution.Context;
 import org.opencds.cqf.cql.engine.execution.Variable;
 import org.opencds.cqf.cql.engine.runtime.Code;
 import org.opencds.cqf.cql.engine.runtime.Interval;
-import org.opencds.cqf.r4.builders.MeasureReportBuilder;
+import org.opencds.cqf.ruler.common.r4.builder.MeasureReportBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,29 +1,10 @@
-package org.opencds.cqf.dstu3.providers;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+package org.opencds.cqf.ruler.cpg.dstu3.operation;
 
 import javax.inject.Inject;
 
-import org.apache.commons.lang3.tuple.Triple;
-import org.cqframework.cql.cql2elm.CqlTranslator;
-import org.cqframework.cql.cql2elm.CqlTranslatorException;
-import org.cqframework.cql.elm.tracking.TrackBack;
-import org.opencds.cqf.common.evaluation.EvaluationProviderFactory;
-import org.opencds.cqf.common.evaluation.LibraryLoader;
-import org.opencds.cqf.common.helpers.DateHelper;
-import org.opencds.cqf.common.helpers.TranslatorHelper;
-import org.opencds.cqf.common.helpers.UsingHelper;
-import org.opencds.cqf.common.providers.LibraryResolutionProvider;
-import org.opencds.cqf.cql.engine.data.DataProvider;
-import org.opencds.cqf.cql.engine.execution.Context;
-import org.opencds.cqf.cql.engine.runtime.DateTime;
-import org.opencds.cqf.cql.engine.runtime.Interval;
-import org.opencds.cqf.cql.engine.terminology.TerminologyProvider;
+import org.hl7.fhir.dstu3.model.Bundle;
+import org.hl7.fhir.dstu3.model.Parameters;
+import org.opencds.cqf.ruler.common.dstu3.provider.CqlExecutionProvider;
 import org.springframework.stereotype.Component;
 
 import ca.uhn.fhir.rest.annotation.Operation;
@@ -34,15 +15,13 @@ import ca.uhn.fhir.rest.annotation.OperationParam;
  */
 @Component
 public class CqlOperations {
-    private CqlExecutionProvider cqlExecutionProvider
-    private LibraryResolutionProvider<Library> libraryResolutionProvider;
+    private CqlExecutionProvider cqlExecutionProvider;
 
     @Inject
-    public CqlExecutionProvider(CqlExecutionProvider cqlExecutionProvider) {
+    public CqlOperations(CqlExecutionProvider cqlExecutionProvider) {
         this.cqlExecutionProvider = cqlExecutionProvider;
     }
 
-    @SuppressWarnings("unchecked")
     @Operation(name = "$cql")
     public Bundle evaluate(@OperationParam(name = "code") String code,
             @OperationParam(name = "patientId") String patientId,
@@ -55,7 +34,7 @@ public class CqlOperations {
             @OperationParam(name = "context") String contextParam,
             @OperationParam(name = "parameters") Parameters parameters) {
 
-        return this.cqlExecutionProvider.evaluate();
+        return this.cqlExecutionProvider.evaluate(code, patientId, periodStart, periodEnd, productLine, terminologyServiceUri, terminologyUser, terminologyPass, contextParam, parameters);
     }
 
 

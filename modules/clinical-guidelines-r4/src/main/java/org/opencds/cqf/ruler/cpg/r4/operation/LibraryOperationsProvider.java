@@ -1,4 +1,4 @@
-package org.opencds.cqf.r4.providers;
+package org.opencds.cqf.ruler.cpg.r4.operation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,14 +28,6 @@ import org.hl7.fhir.r4.model.Parameters;
 import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.Type;
-import org.opencds.cqf.cds.providers.PriorityRetrieveProvider;
-import org.opencds.cqf.common.evaluation.LibraryLoader;
-import org.opencds.cqf.common.helpers.ClientHelperDos;
-import org.opencds.cqf.common.helpers.DateHelper;
-import org.opencds.cqf.common.providers.LibraryResolutionProvider;
-import org.opencds.cqf.common.providers.LibrarySourceProvider;
-import org.opencds.cqf.common.providers.R4ApelonFhirTerminologyProvider;
-import org.opencds.cqf.common.retrieve.JpaFhirRetrieveProvider;
 import org.opencds.cqf.cql.engine.data.CompositeDataProvider;
 import org.opencds.cqf.cql.engine.data.DataProvider;
 import org.opencds.cqf.cql.engine.execution.CqlEngine;
@@ -49,10 +41,20 @@ import org.opencds.cqf.cql.engine.runtime.DateTime;
 import org.opencds.cqf.cql.engine.runtime.Interval;
 import org.opencds.cqf.cql.engine.terminology.TerminologyProvider;
 import org.opencds.cqf.cql.evaluator.execution.provider.BundleRetrieveProvider;
+import org.opencds.cqf.cql.evaluator.execution.provider.PriorityRetrieveProvider;
+import org.opencds.cqf.ruler.common.evaluation.LibraryLoader;
+import org.opencds.cqf.ruler.common.helper.ClientHelperDos;
+import org.opencds.cqf.ruler.common.helper.DateHelper;
+import org.opencds.cqf.ruler.common.provider.LibraryResolutionProvider;
+import org.opencds.cqf.ruler.common.provider.LibrarySourceProvider;
+import org.opencds.cqf.ruler.common.r4.helper.FhirMeasureBundler;
+import org.opencds.cqf.ruler.common.r4.helper.LibraryHelper;
+import org.opencds.cqf.ruler.common.r4.provider.ApelonFhirTerminologyProvider;
+import org.opencds.cqf.ruler.common.r4.provider.R4BundleLibrarySourceProvider;
+import org.opencds.cqf.ruler.common.retrieve.JpaFhirRetrieveProvider;
+import org.opencds.cqf.ruler.cr.r4.evaluation.DataRequirementsProvider;
 import org.opencds.cqf.tooling.library.r4.NarrativeProvider;
 import org.springframework.stereotype.Component;
-import org.opencds.cqf.r4.helpers.FhirMeasureBundler;
-import org.opencds.cqf.r4.helpers.LibraryHelper;
 
 import ca.uhn.fhir.jpa.api.dao.DaoRegistry;
 import ca.uhn.fhir.jpa.rp.r4.LibraryResourceProvider;
@@ -220,7 +222,7 @@ public class LibraryOperationsProvider implements LibraryResolutionProvider<org.
         if (terminologyEndpoint != null) {
             IGenericClient client = ClientHelperDos.getClient(resolver.getFhirContext(), terminologyEndpoint);
             if (terminologyEndpoint.getAddress().contains("apelon")) {
-                terminologyProvider = new R4ApelonFhirTerminologyProvider(client);
+                terminologyProvider = new ApelonFhirTerminologyProvider(client);
             } else {
                 terminologyProvider = new R4FhirTerminologyProvider(client);
             }
@@ -239,7 +241,7 @@ public class LibraryOperationsProvider implements LibraryResolutionProvider<org.
 
             if (additionalData != null) {
                 BundleRetrieveProvider bundleProvider = new BundleRetrieveProvider(resolver, additionalData, terminologyProvider);
-                PriorityRetrieveProvider priorityProvider = new PriorityRetrieveProvider(bundleProvider, retriever);
+                PriorityRetrieveProvider priorityProvider = new PriorityRetrieveProvider(Arrays.asList(bundleProvider, retriever));
                 dataProvider = new CompositeDataProvider(resolver, priorityProvider);
             }
             else
@@ -259,7 +261,7 @@ public class LibraryOperationsProvider implements LibraryResolutionProvider<org.
 
             if (additionalData != null) {
                 BundleRetrieveProvider bundleProvider = new BundleRetrieveProvider(resolver, additionalData, terminologyProvider);
-                PriorityRetrieveProvider priorityProvider = new PriorityRetrieveProvider(bundleProvider, retriever);
+                PriorityRetrieveProvider priorityProvider = new PriorityRetrieveProvider(Arrays.asList(bundleProvider, retriever));
                 dataProvider = new CompositeDataProvider(resolver, priorityProvider);
             }
             else

@@ -1,4 +1,4 @@
-package org.opencds.cqf.r4.evaluation;
+package org.opencds.cqf.ruler.cr.r4.evaluation;
 
 import java.util.Date;
 import java.util.List;
@@ -6,10 +6,10 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.Triple;
 import org.cqframework.cql.elm.execution.Library;
 import org.hl7.fhir.r4.model.Measure;
-import org.opencds.cqf.common.evaluation.EvaluationProviderFactory;
-import org.opencds.cqf.common.helpers.DateHelper;
-import org.opencds.cqf.common.helpers.UsingHelper;
-import org.opencds.cqf.common.providers.LibraryResolutionProvider;
+import org.opencds.cqf.ruler.common.evaluation.EvaluationProviderFactory;
+import org.opencds.cqf.ruler.common.helper.DateHelper;
+import org.opencds.cqf.ruler.common.helper.UsingHelper;
+import org.opencds.cqf.ruler.common.provider.LibraryResolutionProvider;
 import org.opencds.cqf.cql.engine.data.DataProvider;
 import org.opencds.cqf.cql.engine.debug.DebugMap;
 import org.opencds.cqf.cql.engine.execution.Context;
@@ -17,7 +17,7 @@ import org.opencds.cqf.cql.engine.execution.LibraryLoader;
 import org.opencds.cqf.cql.engine.runtime.DateTime;
 import org.opencds.cqf.cql.engine.runtime.Interval;
 import org.opencds.cqf.cql.engine.terminology.TerminologyProvider;
-import org.opencds.cqf.r4.helpers.LibraryHelper;
+import org.opencds.cqf.ruler.common.r4.helper.LibraryHelper;
 
 public class MeasureEvaluationSeed {
     private Measure measure;

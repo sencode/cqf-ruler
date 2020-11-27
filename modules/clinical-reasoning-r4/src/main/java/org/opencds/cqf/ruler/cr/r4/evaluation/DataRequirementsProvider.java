@@ -1,4 +1,4 @@
-package org.opencds.cqf.r4.providers;
+package org.opencds.cqf.ruler.cr.r4.evaluation;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -54,8 +54,8 @@ import org.hl7.fhir.r4.model.Measure;
 import org.hl7.fhir.r4.model.ParameterDefinition;
 import org.hl7.fhir.r4.model.RelatedArtifact;
 import org.hl7.fhir.r4.model.StringType;
-import org.opencds.cqf.common.helpers.TranslatorHelper;
-import org.opencds.cqf.common.providers.LibraryResolutionProvider;
+import org.opencds.cqf.ruler.common.helper.TranslatorHelper;
+import org.opencds.cqf.ruler.common.provider.LibraryResolutionProvider;
 import org.opencds.cqf.cql.engine.execution.LibraryLoader;
 import org.opencds.cqf.tooling.measure.r4.CodeTerminologyRef;
 import org.opencds.cqf.tooling.measure.r4.CqfMeasure;
@@ -63,8 +63,9 @@ import org.opencds.cqf.tooling.measure.r4.TerminologyRef;
 import org.opencds.cqf.tooling.measure.r4.TerminologyRef.TerminologyRefType;
 import org.springframework.stereotype.Component;
 import org.opencds.cqf.tooling.measure.r4.VersionedTerminologyRef;
-import org.opencds.cqf.r4.helpers.CanonicalHelper;
-import org.opencds.cqf.r4.helpers.LibraryHelper;
+import org.opencds.cqf.ruler.common.r4.helper.CanonicalHelper;
+import org.opencds.cqf.ruler.common.r4.helper.LibraryHelper;
+import org.opencds.cqf.ruler.cr.constant.MeasureConstants;
 
 @Component
 public class DataRequirementsProvider {
@@ -290,7 +291,7 @@ public class DataRequirementsProvider {
                             if (population.hasCriteria() && population.getCriteria().hasExpression()
                                     && population.getCriteria().getExpression().equalsIgnoreCase(statement.getName())) {
                                 String code = population.getCode().getCodingFirstRep().getCode();
-                                String display = HQMFProvider.measurePopulationValueSetMap.get(code).displayName;
+                                String display = MeasureConstants.measurePopulationValueSetMap.get(code).displayName;
                                 population.setCriteria(new Expression().setName(display).setExpression(statementText));
                             }
                         }
@@ -376,7 +377,7 @@ public class DataRequirementsProvider {
             if (cqfMeasure.getGroup().size() == 1
                     || entry.getValue().stream().map(Triple::getLeft).distinct().count() > 1) {
                 String code = entry.getValue().get(0).getMiddle();
-                String display = HQMFProvider.measurePopulationValueSetMap.get(code).displayName;
+                String display = MeasureConstants.measurePopulationValueSetMap.get(code).displayName;
                 cqfMeasure.addSharedPopulationCritiera(criteria, display, entry.getValue().get(0).getRight());
             }
         }
@@ -395,7 +396,7 @@ public class DataRequirementsProvider {
                     if (mgpc.hasCriteria() && mgpc.getCriteria().hasExpression() && !cqfMeasure
                             .getSharedPopulationCritieria().containsKey(mgpc.getCriteria().getExpression())) {
                         String code = mgpc.getCode().getCodingFirstRep().getCode();
-                        String display = HQMFProvider.measurePopulationValueSetMap.get(code).displayName;
+                        String display = MeasureConstants.measurePopulationValueSetMap.get(code).displayName;
                         mgpc.getCriteria().setName(display);
                         newMgpc.add(mgpc);
                     }

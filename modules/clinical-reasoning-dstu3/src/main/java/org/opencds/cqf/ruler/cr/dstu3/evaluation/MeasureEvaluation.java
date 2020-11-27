@@ -21,13 +21,13 @@ import org.hl7.fhir.dstu3.model.Resource;
 import org.hl7.fhir.dstu3.model.StringType;
 import org.hl7.fhir.dstu3.model.UriType;
 import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.opencds.cqf.ruler.common.dstu3.builder.MeasureReportBuilder;
 import org.opencds.cqf.ruler.cr.constant.MeasurePopulationType;
 import org.opencds.cqf.ruler.cr.constant.MeasureScoring;
 import org.opencds.cqf.cql.engine.execution.Context;
 import org.opencds.cqf.cql.engine.execution.Variable;
 import org.opencds.cqf.cql.engine.runtime.Code;
 import org.opencds.cqf.cql.engine.runtime.Interval;
-import org.opencds.cqf.ruler.core.dstu3.builders.MeasureReportBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

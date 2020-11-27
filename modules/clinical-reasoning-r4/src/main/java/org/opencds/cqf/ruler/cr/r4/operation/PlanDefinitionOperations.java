@@ -1,4 +1,4 @@
-package org.opencds.cqf.r4.providers;
+package org.opencds.cqf.ruler.cr.r4.operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,22 +22,22 @@ import org.hl7.fhir.r4.model.RelatedArtifact;
 import org.hl7.fhir.r4.model.RequestGroup;
 import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.StringType;
-import org.opencds.cqf.common.config.HapiProperties;
 import org.opencds.cqf.cql.engine.execution.Context;
 import org.opencds.cqf.cql.engine.fhir.model.R4FhirModelResolver;
 import org.opencds.cqf.cql.engine.model.ModelResolver;
 import org.opencds.cqf.cql.engine.runtime.DateTime;
-import org.opencds.cqf.r4.builders.AttachmentBuilder;
-import org.opencds.cqf.r4.builders.CarePlanActivityBuilder;
-import org.opencds.cqf.r4.builders.CarePlanBuilder;
-import org.opencds.cqf.r4.builders.ExtensionBuilder;
-import org.opencds.cqf.r4.builders.JavaDateBuilder;
-import org.opencds.cqf.r4.builders.ReferenceBuilder;
-import org.opencds.cqf.r4.builders.RelatedArtifactBuilder;
-import org.opencds.cqf.r4.builders.RequestGroupActionBuilder;
-import org.opencds.cqf.r4.builders.RequestGroupBuilder;
-import org.opencds.cqf.r4.helpers.CanonicalHelper;
-import org.opencds.cqf.r4.helpers.ContainedHelper;
+import org.opencds.cqf.ruler.common.r4.builder.AttachmentBuilder;
+import org.opencds.cqf.ruler.common.r4.builder.CarePlanActivityBuilder;
+import org.opencds.cqf.ruler.common.r4.builder.CarePlanBuilder;
+import org.opencds.cqf.ruler.common.r4.builder.ExtensionBuilder;
+import org.opencds.cqf.ruler.common.r4.builder.JavaDateBuilder;
+import org.opencds.cqf.ruler.common.r4.builder.ReferenceBuilder;
+import org.opencds.cqf.ruler.common.r4.builder.RelatedArtifactBuilder;
+import org.opencds.cqf.ruler.common.r4.builder.RequestGroupActionBuilder;
+import org.opencds.cqf.ruler.common.r4.builder.RequestGroupBuilder;
+import org.opencds.cqf.ruler.common.r4.helper.CanonicalHelper;
+import org.opencds.cqf.ruler.common.r4.helper.ContainedHelper;
+import org.opencds.cqf.ruler.common.r4.provider.CqlExecutionProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -50,30 +50,33 @@ import ca.uhn.fhir.rest.annotation.Operation;
 import ca.uhn.fhir.rest.annotation.OperationParam;
 
 @Component
-public class PlanDefinitionApplyProvider {
+public class PlanDefinitionOperations {
 
     private final CqlExecutionProvider executionProvider;
     private final ModelResolver modelResolver;
-    private final ActivityDefinitionApplyProvider activityDefinitionApplyProvider;
+    private final ActivityDefinitionOperations activityDefinitionOperations;
 
     private final IFhirResourceDao<PlanDefinition> planDefinitionDao;
     private final IFhirResourceDao<ActivityDefinition> activityDefinitionDao;
 
     private final FhirContext fhirContext;
 
-    private static final Logger logger = LoggerFactory.getLogger(PlanDefinitionApplyProvider.class);
+    private String serverBase;
+
+    private static final Logger logger = LoggerFactory.getLogger(PlanDefinitionOperations.class);
 
     @Inject
-    public PlanDefinitionApplyProvider(FhirContext fhirContext,
-            ActivityDefinitionApplyProvider activityDefinitionApplyProvider,
+    public PlanDefinitionOperations(FhirContext fhirContext,
+            ActivityDefinitionOperations activityDefinitionOperations,
             IFhirResourceDao<PlanDefinition> planDefinitionDao,
-            IFhirResourceDao<ActivityDefinition> activityDefinitionDao, CqlExecutionProvider executionProvider) {
+            IFhirResourceDao<ActivityDefinition> activityDefinitionDao, CqlExecutionProvider executionProvider, String serverBase) {
         this.executionProvider = executionProvider;
         this.modelResolver = new R4FhirModelResolver();
-        this.activityDefinitionApplyProvider = activityDefinitionApplyProvider;
+        this.activityDefinitionOperations = activityDefinitionOperations;
         this.planDefinitionDao = planDefinitionDao;
         this.activityDefinitionDao = activityDefinitionDao;
         this.fhirContext = fhirContext;
+        this.serverBase = serverBase;
     }
 
     public IFhirResourceDao<PlanDefinition> getDao() {
@@ -189,12 +192,12 @@ public class PlanDefinitionApplyProvider {
                 Resource result;
                 try {
                     if (action.getDefinitionCanonicalType().getValue().startsWith("#")) {
-                        result = this.activityDefinitionApplyProvider.resolveActivityDefinition(
+                        result = this.activityDefinitionOperations.resolveActivityDefinition(
                                 (ActivityDefinition) resolveContained(session.getPlanDefinition(),
                                         action.getDefinitionCanonicalType().getValue()),
                                 session.getPatientId(), session.getPractitionerId(), session.getOrganizationId());
                     } else {
-                        result = this.activityDefinitionApplyProvider.apply(
+                        result = this.activityDefinitionOperations.apply(
                                 new IdType(CanonicalHelper.getId(action.getDefinitionCanonicalType())),
                                 session.getPatientId(), session.getEncounterId(), session.getPractitionerId(),
                                 session.getOrganizationId(), null, session.getUserLanguage(),
@@ -412,7 +415,7 @@ public class PlanDefinitionApplyProvider {
                                 actionBuilder.buildDescripition(activityDefinition.getDescription());
                             }
                             try {
-                                this.activityDefinitionApplyProvider
+                                this.activityDefinitionOperations
                                         .apply(new IdType(action.getDefinitionCanonicalType().getId()), patientId, null,
                                                 null, null, null, null, null, null, null)
                                         .setId(UUID.randomUUID().toString());
@@ -424,7 +427,7 @@ public class PlanDefinitionApplyProvider {
                             Parameters inParams = new Parameters();
                             inParams.addParameter().setName("patient").setValue(new StringType(patientId));
                             Parameters outParams = this.fhirContext
-                                    .newRestfulGenericClient(HapiProperties.getServerBase()).operation()
+                                    .newRestfulGenericClient(this.serverBase).operation()
                                     .onInstance(new IdDt("ActivityDefinition", action.getDefinition().getId()))
                                     .named("$apply").withParameters(inParams).useHttpGet().execute();
 

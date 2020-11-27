@@ -1,4 +1,4 @@
-package org.opencds.cqf.ruler.core.config;
+package org.opencds.cqf.ruler.common.config;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Driver;

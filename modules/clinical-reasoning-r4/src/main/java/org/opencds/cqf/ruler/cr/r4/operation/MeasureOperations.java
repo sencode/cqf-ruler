@@ -1,4 +1,4 @@
-package org.opencds.cqf.r4.providers;
+package org.opencds.cqf.ruler.cr.r4.operation;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -13,15 +13,16 @@ import org.hl7.fhir.instance.model.api.IAnyResource;
 import org.hl7.fhir.instance.model.api.IBase;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.*;
-import org.opencds.cqf.common.evaluation.EvaluationProviderFactory;
-import org.opencds.cqf.common.providers.LibraryResolutionProvider;
+import org.opencds.cqf.ruler.common.evaluation.EvaluationProviderFactory;
+import org.opencds.cqf.ruler.common.provider.LibraryResolutionProvider;
 import org.opencds.cqf.cql.engine.data.DataProvider;
 import org.opencds.cqf.cql.engine.execution.LibraryLoader;
 import org.opencds.cqf.tooling.library.r4.NarrativeProvider;
 import org.opencds.cqf.tooling.measure.r4.CqfMeasure;
-import org.opencds.cqf.r4.evaluation.MeasureEvaluation;
-import org.opencds.cqf.r4.evaluation.MeasureEvaluationSeed;
-import org.opencds.cqf.r4.helpers.LibraryHelper;
+import org.opencds.cqf.ruler.cr.r4.evaluation.DataRequirementsProvider;
+import org.opencds.cqf.ruler.cr.r4.evaluation.MeasureEvaluation;
+import org.opencds.cqf.ruler.cr.r4.evaluation.MeasureEvaluationSeed;
+import org.opencds.cqf.ruler.common.r4.helper.LibraryHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -38,10 +39,9 @@ import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.server.exceptions.InternalErrorException;
 
 @Component
-public class MeasureOperationsProvider {
+public class MeasureOperations {
 
     private NarrativeProvider narrativeProvider;
-    private HQMFProvider hqmfProvider;
     private DataRequirementsProvider dataRequirementsProvider;
 
     private LibraryResolutionProvider<org.hl7.fhir.r4.model.Library> libraryResolutionProvider;
@@ -49,11 +49,11 @@ public class MeasureOperationsProvider {
     private DaoRegistry registry;
     private EvaluationProviderFactory factory;
 
-    private static final Logger logger = LoggerFactory.getLogger(MeasureOperationsProvider.class);
+    private static final Logger logger = LoggerFactory.getLogger(MeasureOperations.class);
 
     @Inject
-    public MeasureOperationsProvider(DaoRegistry registry, EvaluationProviderFactory factory,
-            NarrativeProvider narrativeProvider, HQMFProvider hqmfProvider,
+    public MeasureOperations(DaoRegistry registry, EvaluationProviderFactory factory,
+            NarrativeProvider narrativeProvider,
             LibraryResolutionProvider<org.hl7.fhir.r4.model.Library> libraryResolutionProvider,
             MeasureResourceProvider measureResourceProvider) {
         this.registry = registry;
@@ -61,18 +61,8 @@ public class MeasureOperationsProvider {
 
         this.libraryResolutionProvider = libraryResolutionProvider;
         this.narrativeProvider = narrativeProvider;
-        this.hqmfProvider = hqmfProvider;
         this.dataRequirementsProvider = new DataRequirementsProvider();
         this.measureResourceProvider = measureResourceProvider;
-    }
-
-    @Operation(name = "$hqmf", idempotent = true, type = Measure.class)
-    public Parameters hqmf(@IdParam IdType theId) {
-        Measure theResource = this.measureResourceProvider.getDao().read(theId);
-        String hqmf = this.generateHQMF(theResource);
-        Parameters p = new Parameters();
-        p.addParameter().setValue(new StringType(hqmf));
-        return p;
     }
 
     @Operation(name = "$refresh-generated-content", type = Measure.class)
@@ -124,12 +114,6 @@ public class MeasureOperationsProvider {
         Parameters p = new Parameters();
         p.addParameter().setValue(new StringType(n.getDivAsString()));
         return p;
-    }
-
-    private String generateHQMF(Measure theResource) {
-        CqfMeasure cqfMeasure = this.dataRequirementsProvider.createCqfMeasure(theResource,
-                this.libraryResolutionProvider);
-        return this.hqmfProvider.generateHQMF(cqfMeasure);
     }
 
     /*

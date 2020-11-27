@@ -5,6 +5,7 @@
         <groupId>org.opencds.cqf.ruler</groupId>
         <artifactId>parent</artifactId>
         <version>${revision}</version>
+        <relativePath>../../</relativePath>
     </parent>
 
     <groupId>org.opencds.cqf.ruler</groupId>
@@ -13,9 +14,26 @@
 
     <dependencies>
        <dependency>
-            <groupId>org.opencds.cqf.ruler</org></groupId>
-            <artifactId>core-dstu3</artifactId>
+            <groupId>org.opencds.cqf.ruler</groupId>
+            <artifactId>common-dstu3</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.opencds.cqf.ruler</groupId>
+            <artifactId>clinical-reasoning-dstu3</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.opencds.cqf</groupId>
+            <artifactId>cds</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>ca.uhn.hapi.fhir</groupId>
+            <artifactId>hapi-fhir-base</artifactId>
+        </dependency>
+
     </dependencies>
 </project>

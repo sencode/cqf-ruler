@@ -1,4 +1,4 @@
-package org.opencds.cqf.dstu3.servlet;
+package org.opencds.cqf.ruler.cdshooks.dstu3.servlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -34,20 +34,18 @@ import org.opencds.cqf.cds.providers.ProviderConfiguration;
 import org.opencds.cqf.cds.request.JsonHelper;
 import org.opencds.cqf.cds.request.Request;
 import org.opencds.cqf.cds.response.CdsCard;
-import org.opencds.cqf.common.config.HapiProperties;
-import org.opencds.cqf.common.exceptions.InvalidRequestException;
-import org.opencds.cqf.common.providers.LibraryResolutionProvider;
-import org.opencds.cqf.common.retrieve.JpaFhirRetrieveProvider;
 import org.opencds.cqf.cql.engine.data.CompositeDataProvider;
 import org.opencds.cqf.cql.engine.debug.DebugMap;
 import org.opencds.cqf.cql.engine.exception.CqlException;
 import org.opencds.cqf.cql.engine.execution.Context;
-import org.opencds.cqf.cql.engine.execution.LibraryLoader;
 import org.opencds.cqf.cql.engine.fhir.exception.DataProviderException;
 import org.opencds.cqf.cql.engine.fhir.model.Dstu3FhirModelResolver;
-import org.opencds.cqf.dstu3.helpers.LibraryHelper;
-import org.opencds.cqf.dstu3.providers.JpaTerminologyProvider;
-import org.opencds.cqf.dstu3.providers.PlanDefinitionApplyProvider;
+import org.opencds.cqf.ruler.common.dstu3.helper.LibraryHelper;
+import org.opencds.cqf.ruler.common.dstu3.provider.JpaTerminologyProvider;
+import org.opencds.cqf.ruler.common.exception.InvalidRequestException;
+import org.opencds.cqf.ruler.common.provider.LibraryResolutionProvider;
+import org.opencds.cqf.ruler.common.retrieve.JpaFhirRetrieveProvider;
+import org.opencds.cqf.ruler.cr.dstu3.operation.PlanDefinitionOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -62,15 +60,19 @@ public class CdsHooksServlet extends HttpServlet {
     private FhirVersionEnum version = FhirVersionEnum.DSTU3;
     private static final Logger logger = LoggerFactory.getLogger(CdsHooksServlet.class);
 
-    private org.opencds.cqf.dstu3.providers.PlanDefinitionApplyProvider planDefinitionProvider;
+    private org.opencds.cqf.ruler.cr.dstu3.operation.PlanDefinitionOperations planDefinitionOperations;
 
     private LibraryResolutionProvider<org.hl7.fhir.dstu3.model.Library> libraryResolutionProvider;
 
     private JpaFhirRetrieveProvider fhirRetrieveProvider;
 
-    private org.opencds.cqf.dstu3.providers.JpaTerminologyProvider jpaTerminologyProvider;
+    private org.opencds.cqf.ruler.common.dstu3.provider.JpaTerminologyProvider jpaTerminologyProvider;
 
     private ProviderConfiguration providerConfiguration;
+
+    private String serverBase;
+    private Boolean corsEnabled;
+    private String corsOrigins;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -80,10 +82,15 @@ public class CdsHooksServlet extends HttpServlet {
         .getAttribute("org.springframework.web.context.WebApplicationContext.ROOT");
 
         this.providerConfiguration = appCtx.getBean(ProviderConfiguration.class);
-        this.planDefinitionProvider = appCtx.getBean(PlanDefinitionApplyProvider.class);
+        this.planDefinitionOperations = appCtx.getBean(PlanDefinitionOperations.class);
         this.libraryResolutionProvider = (LibraryResolutionProvider<org.hl7.fhir.dstu3.model.Library>)appCtx.getBean(LibraryResolutionProvider.class);
         this.fhirRetrieveProvider = appCtx.getBean(JpaFhirRetrieveProvider.class);
         this.jpaTerminologyProvider = appCtx.getBean(JpaTerminologyProvider.class);
+
+        // TODO: Init these things somehow.
+        this.serverBase = null;
+        this.corsEnabled = true;
+        this.corsOrigins = "*";
     }
 
     protected ProviderConfiguration getProviderConfiguration() {
@@ -126,7 +133,7 @@ public class CdsHooksServlet extends HttpServlet {
             }
 
             
-            String baseUrl = HapiProperties.getServerAddress();
+            String baseUrl = this.serverBase;
             String service = request.getPathInfo().replace("/", "");
 
             JsonParser parser = new JsonParser();
@@ -146,8 +153,8 @@ public class CdsHooksServlet extends HttpServlet {
             logger.info("cds-hooks local server address: " + baseUrl);
             logger.info("cds-hooks fhir server address: " + hook.getRequest().getFhirServerUrl());
 
-            PlanDefinition planDefinition = planDefinitionProvider.getDao().read(new IdType(hook.getRequest().getServiceName()));
-            LibraryLoader libraryLoader = LibraryHelper.createLibraryLoader(libraryResolutionProvider);
+            PlanDefinition planDefinition = planDefinitionOperations.getDao().read(new IdType(hook.getRequest().getServiceName()));
+            org.opencds.cqf.ruler.common.evaluation.LibraryLoader libraryLoader = LibraryHelper.createLibraryLoader(libraryResolutionProvider);
             Library library = LibraryHelper.resolvePrimaryLibrary(planDefinition, libraryLoader, libraryResolutionProvider);
 
             Dstu3FhirModelResolver resolver = new Dstu3FhirModelResolver();
@@ -271,7 +278,7 @@ public class CdsHooksServlet extends HttpServlet {
 
     private JsonObject getServices() {
         DiscoveryResolutionStu3 discoveryResolutionStu3 = new DiscoveryResolutionStu3(
-                FhirContext.forDstu3().newRestfulGenericClient(HapiProperties.getServerAddress()));
+                FhirContext.forDstu3().newRestfulGenericClient(this.serverBase));
         discoveryResolutionStu3.setMaxUriLength(this.getProviderConfiguration().getMaxUriLength());
         return discoveryResolutionStu3.resolve()
                         .getAsJson();
@@ -292,8 +299,8 @@ public class CdsHooksServlet extends HttpServlet {
     }
 
     private void setAccessControlHeaders(HttpServletResponse resp) {
-        if (HapiProperties.getCorsEnabled()) {
-            resp.setHeader("Access-Control-Allow-Origin", HapiProperties.getCorsAllowedOrigin());
+        if (this.corsEnabled) {
+            resp.setHeader("Access-Control-Allow-Origin", this.corsOrigins);
             resp.setHeader("Access-Control-Allow-Methods",
                     String.join(", ", Arrays.asList("GET", "HEAD", "POST", "OPTIONS")));
             resp.setHeader("Access-Control-Allow-Headers", String.join(", ", Arrays.asList("x-fhir-starter", "Origin",

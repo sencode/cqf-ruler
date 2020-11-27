@@ -6,17 +6,17 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.Triple;
 import org.cqframework.cql.elm.execution.Library;
 import org.hl7.fhir.dstu3.model.Measure;
-import org.opencds.cqf.ruler.core.evaluation.EvaluationProviderFactory;
-import org.opencds.cqf.ruler.core.helpers.DateHelper;
-import org.opencds.cqf.ruler.core.helpers.UsingHelper;
-import org.opencds.cqf.ruler.core.providers.LibraryResolutionProvider;
+import org.opencds.cqf.ruler.common.dstu3.helper.LibraryHelper;
+import org.opencds.cqf.ruler.common.evaluation.EvaluationProviderFactory;
+import org.opencds.cqf.ruler.common.helper.DateHelper;
+import org.opencds.cqf.ruler.common.helper.UsingHelper;
+import org.opencds.cqf.ruler.common.provider.LibraryResolutionProvider;
 import org.opencds.cqf.cql.engine.data.DataProvider;
 import org.opencds.cqf.cql.engine.execution.Context;
 import org.opencds.cqf.cql.engine.execution.LibraryLoader;
 import org.opencds.cqf.cql.engine.runtime.DateTime;
 import org.opencds.cqf.cql.engine.runtime.Interval;
 import org.opencds.cqf.cql.engine.terminology.TerminologyProvider;
-import org.opencds.cqf.ruler.core.dstu3.helpers.LibraryHelper;
 
 public class MeasureEvaluationSeed {
     private Measure measure;

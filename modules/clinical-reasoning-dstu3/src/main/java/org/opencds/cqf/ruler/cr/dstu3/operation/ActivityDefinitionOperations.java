@@ -22,11 +22,11 @@ import org.hl7.fhir.dstu3.model.Resource;
 import org.hl7.fhir.dstu3.model.StringType;
 import org.hl7.fhir.dstu3.model.SupplyRequest;
 import org.hl7.fhir.exceptions.FHIRException;
-import org.opencds.cqf.ruler.core.exceptions.ActivityDefinitionApplyException;
 import org.opencds.cqf.cql.engine.fhir.model.Dstu3FhirModelResolver;
 import org.opencds.cqf.cql.engine.model.ModelResolver;
-import org.opencds.cqf.ruler.core.dstu3.helpers.Helper;
-import org.opencds.cqf.ruler.core.dstu3.provider.CqlExecutionProvider;
+import org.opencds.cqf.ruler.common.dstu3.helper.Helper;
+import org.opencds.cqf.ruler.common.dstu3.provider.CqlExecutionProvider;
+import org.opencds.cqf.ruler.common.exception.ActivityDefinitionApplyException;
 import org.springframework.stereotype.Component;
 
 import ca.uhn.fhir.context.FhirContext;

@@ -5,26 +5,26 @@ import java.util.Map;
 
 public class MeasureConstants {
 
-    // private static Map<String, String> measureTypeValueSetMap = new HashMap<String, String>() {
-    //     private static final long serialVersionUID = 1L;
-    //     {
-    //         put("PROCESS", "Process");
-    //         put("OUTCOME", "Outcome");
-    //         put("STRUCTURE", "Structure");
-    //         put("PATIENT-REPORTED-OUTCOME", "Patient Reported Outcome");
-    //         put("COMPOSITE", "Composite");
-    //     }
-    // };
+    public static Map<String, String> measureTypeValueSetMap = new HashMap<String, String>() {
+        private static final long serialVersionUID = 1L;
+        {
+            put("PROCESS", "Process");
+            put("OUTCOME", "Outcome");
+            put("STRUCTURE", "Structure");
+            put("PATIENT-REPORTED-OUTCOME", "Patient Reported Outcome");
+            put("COMPOSITE", "Composite");
+        }
+    };
 
-    // private static Map<String, String> measureScoringValueSetMap = new HashMap<String, String>() {
-    //     private static final long serialVersionUID = 1L;
-    //     {
-    //         put("PROPOR", "Proportion");
-    //         put("RATIO", "Ratio");
-    //         put("CONTINUOUS-VARIABLE", "Continuous Variable");
-    //         put("COHORT", "Cohort");
-    //     }
-    // };
+    public static Map<String, String> measureScoringValueSetMap = new HashMap<String, String>() {
+        private static final long serialVersionUID = 1L;
+        {
+            put("PROPOR", "Proportion");
+            put("RATIO", "Ratio");
+            put("CONTINUOUS-VARIABLE", "Continuous Variable");
+            put("COHORT", "Cohort");
+        }
+    };
 
     public static class CodeMapping {
         public CodeMapping(String code, String displayName, String criteriaName, String criteriaExtension) {

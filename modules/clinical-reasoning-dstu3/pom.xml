@@ -16,7 +16,13 @@
     <dependencies>
         <dependency>
             <groupId>org.opencds.cqf.ruler</groupId>
-            <artifactId>core-dstu3</artifactId>
+            <artifactId>common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.opencds.cqf.ruler</groupId>
+            <artifactId>common-dstu3</artifactId>
             <version>${project.version}</version>
         </dependency>
 

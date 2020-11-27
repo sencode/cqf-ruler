@@ -1,4 +1,4 @@
-package org.opencds.cqf.ruler.core.config;
+package org.opencds.cqf.ruler.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

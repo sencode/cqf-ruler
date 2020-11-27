@@ -2,14 +2,6 @@
 
 .DS_Store
 
-# RxNorm data
-src/main/resources/cds/LocalDataStore_RxNav_OpioidCds.db
-
-# Diabetes Management
-src/test/java/org/opencds/cqf/cds-diabetes-management-request.json
-src/test/java/org/opencds/cqf/cds-diabetes-management-bundle.json
-examples/diabetes-management/diabetes-management.cql
-
 # log files
 *.log
 
@@ -148,10 +140,6 @@ target
 .flattened-pom.xml
 .factorypath
 org.eclipse.m2e.core.prefs
-!/src/main/resources/hapi.properties
-
-.vscode
-
 
 LogMessages.html
 
@@ -161,5 +149,8 @@ LogMessages.html
 core.*
 heapdump.*
 Snap.*
+
+javacore.*
+jitdump.*
 
 .flattened-pom.xml

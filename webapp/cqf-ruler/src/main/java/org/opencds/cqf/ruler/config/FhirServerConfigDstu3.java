@@ -6,7 +6,7 @@
 // import javax.persistence.EntityManagerFactory;
 // import javax.sql.DataSource;
 
-// import org.opencds.cqf.common.config.HapiProperties;
+// import org.opencds.cqf.ruler.common.config.HapiProperties;
 // import org.opencds.cqf.dstu3.providers.ActivityDefinitionApplyProvider;
 // import org.opencds.cqf.dstu3.providers.ApplyCqlOperationProvider;
 // import org.opencds.cqf.dstu3.providers.CacheValueSetsProvider;
@@ -15,7 +15,7 @@
 // import org.opencds.cqf.dstu3.providers.LibraryOperationsProvider;
 // import org.opencds.cqf.dstu3.providers.MeasureOperationsProvider;
 // import org.opencds.cqf.dstu3.providers.ObservationProvider;
-// import org.opencds.cqf.dstu3.providers.PlanDefinitionApplyProvider;
+// import org.opencds.cqf.dstu3.providers.PlanDefinitionOperations;
 // import org.opencds.cqf.dstu3.providers.QuestionnaireProvider;
 // import org.opencds.cqf.tooling.library.stu3.NarrativeProvider;
 // import org.springframework.beans.factory.annotation.Autowired;
@@ -101,7 +101,7 @@
 //         classes.add(CqlExecutionProvider.class);
 //         classes.add(LibraryOperationsProvider.class);
 //         classes.add(MeasureOperationsProvider.class);
-//         classes.add(PlanDefinitionApplyProvider.class);
+//         classes.add(PlanDefinitionOperations.class);
 
 //         // The plugin API will need to a way to determine whether a particular
 //         // service should be registered

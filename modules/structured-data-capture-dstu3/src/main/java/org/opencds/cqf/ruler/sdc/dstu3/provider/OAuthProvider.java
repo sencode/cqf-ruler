@@ -1,4 +1,4 @@
-package org.opencds.cqf.dstu3.providers;
+package org.opencds.cqf.ruler.sdc.dstu3.provider;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -7,7 +7,8 @@ import org.hl7.fhir.dstu3.model.CodeableConcept;
 import org.hl7.fhir.dstu3.model.Coding;
 import org.hl7.fhir.dstu3.model.Extension;
 import org.hl7.fhir.dstu3.model.UriType;
-import org.opencds.cqf.common.config.HapiProperties;
+import org.opencds.cqf.ruler.common.dstu3.provider.CqfRulerJpaConformanceProviderDstu3;
+import org.opencds.cqf.ruler.sdc.config.OAuthConfig;
 import org.springframework.stereotype.Component;
 
 import ca.uhn.fhir.rest.annotation.Metadata;
@@ -20,28 +21,35 @@ import ca.uhn.fhir.rest.api.server.RequestDetails;
  */
 @Component
 public class OAuthProvider extends CqfRulerJpaConformanceProviderDstu3 {
+
+    private OAuthConfig oAuthConfig;
+
+    public OAuthProvider(OAuthConfig oAuthConfig) {
+        this.oAuthConfig = oAuthConfig;
+    }
+    
     @Metadata
     @Override
     public CapabilityStatement getServerConformance(HttpServletRequest theRequest, RequestDetails theRequestDetails) {
         CapabilityStatement retVal;
         retVal = super.getServerConformance(theRequest, theRequestDetails);
 
-        retVal.getRestFirstRep().getSecurity().setCors(HapiProperties.getOauthSecurityCors());
+        retVal.getRestFirstRep().getSecurity().setCors(oAuthConfig.getOauthSecurityCors());
         Extension securityExtension = retVal.getRestFirstRep().getSecurity().addExtension();
-        securityExtension.setUrl(HapiProperties.getOauthSecurityUrl());
+        securityExtension.setUrl(oAuthConfig.getOauthSecurityUrl());
         // security.extension.extension
         Extension securityExtExt = securityExtension.addExtension();
-        securityExtExt.setUrl(HapiProperties.getOauthSecurityExtAuthUrl());
-        securityExtExt.setValue(new UriType(HapiProperties.getOauthSecurityExtAuthValueUri()));
+        securityExtExt.setUrl(oAuthConfig.getOauthSecurityExtAuthUrl());
+        securityExtExt.setValue(new UriType(oAuthConfig.getOauthSecurityExtAuthValueUri()));
         Extension securityTokenExt = securityExtension.addExtension();
-        securityTokenExt.setUrl(HapiProperties.getOauthSecurityExtTokenUrl());
-        securityTokenExt.setValue(new UriType(HapiProperties.getOauthSecurityExtTokenValueUri()));
+        securityTokenExt.setUrl(oAuthConfig.getOauthSecurityExtTokenUrl());
+        securityTokenExt.setValue(new UriType(oAuthConfig.getOauthSecurityExtTokenValueUri()));
 
         // security.extension.service
         Coding coding = new Coding();
-        coding.setSystem(HapiProperties.getOauthServiceSystem());
-        coding.setCode(HapiProperties.getOauthServiceCode());
-        coding.setDisplay(HapiProperties.getOauthServiceDisplay());
+        coding.setSystem(oAuthConfig.getOauthServiceSystem());
+        coding.setCode(oAuthConfig.getOauthServiceCode());
+        coding.setDisplay(oAuthConfig.getOauthServiceDisplay());
         CodeableConcept codeConcept = new CodeableConcept();
         codeConcept.addCoding(coding);
         retVal.getRestFirstRep().getSecurity().getService().add(codeConcept);

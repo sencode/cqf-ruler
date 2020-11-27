@@ -1,4 +1,4 @@
-package org.opencds.cqf.r4.providers;
+package org.opencds.cqf.ruler.cr.r4.operation;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,10 +22,11 @@ import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.ServiceRequest;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.SupplyRequest;
-import org.opencds.cqf.common.exceptions.ActivityDefinitionApplyException;
 import org.opencds.cqf.cql.engine.fhir.model.R4FhirModelResolver;
 import org.opencds.cqf.cql.engine.model.ModelResolver;
-import org.opencds.cqf.r4.helpers.Helper;
+import org.opencds.cqf.ruler.common.r4.helper.Helper;
+import org.opencds.cqf.ruler.common.r4.provider.CqlExecutionProvider;
+import org.opencds.cqf.ruler.common.exception.ActivityDefinitionApplyException;
 import org.springframework.stereotype.Component;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -39,14 +40,14 @@ import ca.uhn.fhir.rest.server.exceptions.InternalErrorException;
  * Created by Bryn on 1/16/2017.
  */
 @Component
-public class ActivityDefinitionApplyProvider {
+public class ActivityDefinitionOperations {
 
     private CqlExecutionProvider executionProvider;
     private ModelResolver modelResolver;
     private IFhirResourceDao<ActivityDefinition> activityDefinitionDao;
 
     @Inject
-    public ActivityDefinitionApplyProvider(FhirContext fhirContext, CqlExecutionProvider executionProvider,
+    public ActivityDefinitionOperations(FhirContext fhirContext, CqlExecutionProvider executionProvider,
             IFhirResourceDao<ActivityDefinition> activityDefinitionDao) {
         this.modelResolver = new R4FhirModelResolver();
         this.executionProvider = executionProvider;

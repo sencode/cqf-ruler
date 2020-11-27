@@ -1,4 +1,4 @@
-package org.opencds.cqf.dstu3.providers;
+package org.opencds.cqf.ruler.cpg.dstu3.operation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,8 +17,9 @@ import org.hl7.fhir.dstu3.model.Narrative;
 import org.hl7.fhir.dstu3.model.Parameters;
 import org.hl7.fhir.dstu3.model.StringType;
 import org.hl7.fhir.instance.model.api.IBaseResource;
-import org.opencds.cqf.common.providers.LibraryResolutionProvider;
-import org.opencds.cqf.common.providers.LibrarySourceProvider;
+import org.opencds.cqf.ruler.common.provider.LibraryResolutionProvider;
+import org.opencds.cqf.ruler.common.provider.LibrarySourceProvider;
+import org.opencds.cqf.ruler.cr.dstu3.evaluation.DataRequirementsProvider;
 import org.opencds.cqf.tooling.library.stu3.NarrativeProvider;
 import org.springframework.stereotype.Component;
 
@@ -35,14 +36,14 @@ import ca.uhn.fhir.rest.param.TokenParam;
 import ca.uhn.fhir.rest.param.UriParam;
 
 @Component
-public class LibraryOperationsProvider implements org.opencds.cqf.common.providers.LibraryResolutionProvider<Library> {
+public class LibraryOperations implements LibraryResolutionProvider<Library> {
 
     private NarrativeProvider narrativeProvider;
     private DataRequirementsProvider dataRequirementsProvider;
     private LibraryResourceProvider libraryResourceProvider;
 
     @Inject
-    public LibraryOperationsProvider(LibraryResourceProvider libraryResourceProvider,
+    public LibraryOperations(LibraryResourceProvider libraryResourceProvider,
             NarrativeProvider narrativeProvider) {
         this.narrativeProvider = narrativeProvider;
         this.dataRequirementsProvider = new DataRequirementsProvider();
