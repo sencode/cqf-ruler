@@ -203,6 +203,16 @@
             </dependency>
             <dependency>
                 <groupId>info.cqframework</groupId>
+                <artifactId>elm</artifactId>
+                <version>${cqframework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>info.cqframework</groupId>
+                <artifactId>model</artifactId>
+                <version>${cqframework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>info.cqframework</groupId>
                 <artifactId>qdm</artifactId>
                 <version>${cqframework.version}</version>
             </dependency>
